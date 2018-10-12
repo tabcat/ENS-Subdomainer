@@ -1,0 +1,26 @@
+{
+  "0x98ea422dac35582f78f70b03eb40d1d2bb30ceea6bbf2d1613b197140392495a": {
+    "contracts": {
+      "0xd1dceecb5746a0cd27089eb417c9b02acba9dc4c7dbba52eb5006363293042f5": {
+        "name": "Deed",
+        "address": "0x68283D4F1B174a2093c74c17b16fB057FA95C96c"
+      },
+      "0xd7dd9123a39117b3b1f7465336a05788387f007037f2e1b07f3ca001b3f55457": {
+        "name": "ENSRegistry",
+        "address": "0xD0f12521b70b8b4BEdf7415C373B9279C6E8Cb50"
+      },
+      "0xa52fb2bd86987600954c4a0faa1f1e5c179affca45f73a89cec568182091153b": {
+        "name": "SubdomainRegistrar",
+        "address": "0xA767721Aff3EE478b1BC631d162dC95D7c56450d"
+      },
+      "0xba17fdda3d00b6d36da0752de19b36543e734a5c4b8e25500d7267d891db8350": {
+        "name": "HashRegistrar",
+        "address": "0x9985514BC239fbC0AfA679dFF286EAA448019275"
+      },
+      "0xf2512cb62e6e7981e95db88e05f08b5ed8eb98c70f6883f88dfa733de2d29b78": {
+        "name": "FIFSRegistrar",
+        "address": "0xc50e5B0B9500BeBe46E90A85f274ef7b1522edB8"
+      }
+    }
+  }
+}
