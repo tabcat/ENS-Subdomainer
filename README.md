@@ -25,6 +25,8 @@ what works?:
   
   * deployer account with geth: 52db9f99fec3cbf20e9e0d5d9da7d6ed77c1d32f90480015546322b7e1c5df5b
   * deployer account with ganache is first account in ganache
+  
+  if you want to test the ENS Auction component you will need to transfer the eth subnode to the HashRegistrar Contract with the Contract Reader under 'Advanced Utilities'
 
   # build with NPM:
   
@@ -36,8 +38,7 @@ what works?:
   
   $ embark run
   
-  should have a webpage popup in your defualt brower
-  
+  should have a webpage popup in your defualt brower  
   
   
   # change the blockchain provider:
