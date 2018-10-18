@@ -13,7 +13,7 @@ what works?:
 
   Contract Reader works pretty well its under 'Advanced Utilities' tab
   
-  ENS Auction ui kind of works but needs to be able to see unfinalized auctions
+  ENS Auction should work well now
   
   anything under the 'Accounts' tab is completely useless atm
 
