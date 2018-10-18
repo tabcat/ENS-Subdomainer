@@ -6,7 +6,7 @@
     "test": "embark test"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "homepage": "",
   "dependencies": {
     "@material-ui/core": "latest",
