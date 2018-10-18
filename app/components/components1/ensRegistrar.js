@@ -14,10 +14,14 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 
+import ENSRegistry from 'Embark/contracts/ENSRegistry';
 import HashRegistrar from 'Embark/contracts/HashRegistrar';
+const Contract = (abi, addr) => new web3.eth.Contract(abi, addr);
+import DeedABI from './DeedABI';
 
 var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
+const labelhash = (label) => `0x${sha3(label)}`
 
 // import Contracts from '../contractABI';
 //
@@ -78,16 +82,15 @@ const auction = {
     "reveal": (86400 * 2) // 2 day (48 hours)
   },
   "mode": {
-    "0": (props, classes) => [`is available! Start auction below!`, ensOpen(props, classes)],
-    "1": (props, classes) => [`auction has been started.`, ensOpen(props, classes)],
-    "2": (props, classes) => [`is already owned :(`, ensOwned(props, classes)],
-    "3": (props, classes) => [`is forbidden! :o`, ensForb(props, classes)],
-    "4": (props, classes) => [`reveal period has started, and the bidding period has closed.`, ensReveal(props, classes)],
-    "5": (props, classes) => [`is not yet available`, ensUnavail(props, classes)],
-    "6": (props, classes) => [`You Won! One last tx! You need to finalize your name.`, ensFinal(props, classes)]
+    "0": (props) => ensOpen(props),
+    "1": (props) => ensOpen(props),
+    "2": (props) => ensOwned(props),
+    "3": (props) => ensForb(props),
+    "4": (props) => ensReveal(props),
+    "5": (props) => ensUnavail(props),
+    "6": (props) => ensFinal(props)
   }
 }
-
 
 function timeConverter(unixTimestamp){
   var a = new Date(unixTimestamp * 1000);
@@ -98,48 +101,48 @@ function timeConverter(unixTimestamp){
   var hour = a.getHours().length === 1 ? '0' + a.getHours() : a.getHours();
   var min = a.getMinutes().length === 1 ? '0' + a.getMinutes() : a.getMinutes();
   var sec = a.getSeconds().length === 1 ? '0' + a.getSeconds() : a.getSeconds();
-  var time = month + ' ' + date + ', ' + year + ' at ' + hour + ':' + min + ':' + sec + ' local time';
+  var time = date + ' of ' + month + ' ' + year + ' at ' + hour + ':' + min + ':' + sec + ' local time';
   return time;
 }
 
-const entryCheck = (props, classes) => {
-  if (props.state.entry !== '') {
-    return modeCheck(props, classes);
+const entryCheck = (props) => {
+  let { entry, entryState } = props.state;
+  if (entry !== "" && entryState !== "") {
+    return modeCheck(props);
   }
 }
 
-const modeCheck = (props, classes) => {
-  let name = props.state.nameSearch;
-  let entry = props.state.entry;
-  let mode = entry["0"];
-  let obj = auction.mode[mode](props, classes);
-  let title = obj[0];
-  let element = obj[1];
+const modeCheck = (props) => {
+  let { entryState } = props.state;
+  let { classes } = props.props;
+  let mode = entryState;
+  let element = auction.mode[mode](props);
 
   return (
-    <div className={classes.marg}>
-    <Typography variant="title">{`${name}.eth ${title}`}</Typography>
+    <div>
     {element}
     </div>
   );
 }
 
-const ensOpen = (props, classes) => {
-  let name = props.state.nameSearch;
-  let started = props.state.entry["0"] === "1" ? true : false;
-  let revealDate = started ? ` before ${timeConverter(props.state.entry["2"]-auction.time.reveal)}` : "!";
+const ensOpen = (props) => {
+  let { nameSearch, entry, bid } = props.state;
+  let { classes } = props.props;
+  let started = entry["0"] === "1" ? true : false;
+  let revealDate = started ? ` before ${timeConverter(entry["2"]-auction.time.reveal)}` : "!";
   let labels = [
-    `Labelhash: Keccak256 hash of ${props.state.nameSearch} aka labelhash`,
+    `Labelhash: Keccak256 hash of ${nameSearch} aka labelhash`,
     `Bidder Account: !!must reveal bid using this account!!`,
     "Bid Value (in eth)",
     "Salt: This bit of random info helps hide your bid info :D"
   ];
   return(
     <div>
+      <Typography variant="title">{`${nameSearch}.eth is available!`}</Typography>
       <div>
         <Typography variant="subheading">{`Place a bid${revealDate}`}</Typography>
 
-        {props.state.bid.map((param, index) => {
+        {bid.map((param, index) => {
           let read = index === 0 || index === 3 ? true : false;
           return (<TextField
             key={index}
@@ -150,8 +153,8 @@ const ensOpen = (props, classes) => {
             style={{ margin: 8}}
             margin="normal"
             fullWidth
-            onChange={event => props.state.setBid(event, index)}
-            value={props.state.bid[index]}
+            onChange={event => props.setBid(event, index)}
+            value={bid[index]}
             InputProps={{
               readOnly: read,
             }}
@@ -171,19 +174,33 @@ const ensOpen = (props, classes) => {
 
 //Mode, address, uint, uint, uint   state(_hash), h.deed, h.registrationDate, h.value, h.highestBid
 
-const ensOwned = (props, classes) => {
-  let entry = props.state.entry;
+// const checkFin = async(props) => {
+//   let { nameSearch } = props.state;
+//   let labelhashed = labelhash(nameSearch);
+//   let namehashed = namehash.hash(`${nameSearch}.eth`);
+//
+//   let deedOwner = await
+//   let nodeOwner = await ENSRegistry.methods.owner()
+// }
+
+const ensOwned = (props) => {
+  let { nameSearch, entry } = props.state;
+  let { classes } = props.props;
   let entryLabels = ["Deed Address:", "Registration Date:"];
   return (
     <div>
-    <Typography variant="body1">{`${entryLabels[0]} ${entry["1"]}`}</Typography>
-    <Typography variant="body1">{`${entryLabels[1]} ${timeConverter(entry["2"])}`}</Typography>
+      <Typography variant="title">{`${nameSearch}.eth is already owned :(`}</Typography>
+      <div>
+        <Typography variant="body1">{`${entryLabels[0]} ${entry["1"]}`}</Typography>
+        <Typography variant="body1">{`${entryLabels[1]} ${timeConverter(entry["2"])}`}</Typography>
+      </div>
     </div>
   )
 }
 
-const ensReveal = (props, classes) => {
-  let name = props.state.nameSearch;
+const ensReveal = (props) => {
+  let { nameSearch, entry, bid } = props.state;
+  let { classes } = props.props;
   let labels = [
     `Labelhash:`,
     `Bidder Account:`,
@@ -192,10 +209,12 @@ const ensReveal = (props, classes) => {
   ];
   return(
     <div>
+      <Typography variant="title">{`The reveal period for ${nameSearch}.eth has started, the bidding period has closed.`}</Typography>
       <div>
-        <Typography variant="subheading">{`Reveal your bids! Reveal period ends ${timeConverter(props.state.entry["2"])}.`}</Typography>
+        <Typography variant="subheading">{`Reveal your bids! Reveal period ends ${timeConverter(entry["2"])}.`}</Typography>
 
-        {props.state.bid.map((param, index) => {
+        {bid.map((param, index) => {
+          let read = index === 0 ? true : false;
           return (<TextField
             key={index}
             className={classes.textField}
@@ -204,8 +223,11 @@ const ensReveal = (props, classes) => {
             style={{ margin: 8 }}
             margin="normal"
             fullWidth
-            onChange={event => props.state.setBid(event, index)}
-            value={props.state.bid[index]}
+            onChange={event => props.setBid(event, index)}
+            value={bid[index]}
+            InputProps={{
+              readOnly: read,
+            }}
           />)
         })}
       </div>
@@ -220,85 +242,133 @@ const ensReveal = (props, classes) => {
   )
 }
 
-const ensForbidden = (props, classes) => {
+const ensForbidden = (props) => {
+  let { nameSearch } = props.state;
+  let { classes } = props.props;
   return (
-    <Typography variant="subheading">{`Not available until ${null}`}</Typography>
-  )
-}
-
-const ensUnavail = (props, classes) => {
-  let availUnixTimestamp;
-  HashRegistrar.methods.getAllowedTime(sha3(props.state.nameSearch)).call().then(timestamp => availUnixTimestamp = timestamp);
-  let availDate = timeConverter(availUnixTimestamp);
-  return (
-    <Typography variant="subheading">{`Not available until ${availDate}`}</Typography>
-  )
-}
-
-const ensFinal = (props, classes) => {
-  return(
     <div>
-    <Typography variant="subheading">{`Take ownership of ${props.state.nameSearch}.eth`}</Typography>
-    <TextField
-      key={index}
-      className={classes.textField}
-      label={labels[index]}
-      variant="outlined"
-      style={{ margin: 8 }}
-      margin="normal"
-      fullWidth
-      onChange={event => props.state.setBid(event, 0)}
-      value={props.state.bid[0]}
-    />
+      <Typography variant="title">{`${nameSearch}.eth is forbidden! :o`}</Typography>
+      <div>
+        <Typography variant="subheading">{`The state method cant even return this mode atm... lol`}</Typography>
+      </div>
     </div>
   )
 }
 
+const ensUnavail = (props) => {
+  let { nameSearch } = props.state;
+  let { classes } = props.props;
+  let availUnixTimestamp;
+  HashRegistrar.methods.getAllowedTime(sha3(nameSearch)).call().then(timestamp => availUnixTimestamp = timestamp);
+  let availDate = timeConverter(availUnixTimestamp);
+  return (
+    <div>
+      <Typography variant="title">{`${nameSearch}.eth is not yet available`}</Typography>
+      <div>
+        <Typography variant="subheading">{`Try again later (names are made available "randomly")`}</Typography>
+      </div>
+    </div>
+  )
+}
 
+const ensFinal = (props) => {
+  let { nameSearch, deedOwner, bid, currentAcc } = props.state;
+  let { classes } = props.props;
+
+  let isOwner = currentAcc === web3.utils.toHex(deedOwner) ? true : false;
+  let title = isOwner ? `Finalize your purchase` : `${nameSearch}.eth is already owned`;
+  let sub = isOwner ? `Take ownership of ${nameSearch}.eth` : `Account needed to finalize auction: ${deedOwner}`;
+
+  return(
+    <div>
+      <Typography variant="title">{title}</Typography>
+      <div>
+        <Typography variant="subheading">{sub}</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          className={classes.button}
+          disabled={!(isOwner)}
+          onClick={event => props.handleFinalize(event)}
+          children={`Finalize`}
+        />
+      </div>
+    </div>
+  )
+}
 
 class EnsRegistrar extends React.Component {
   state = {
     nameSearch: "",
-    labelhash: () => `0x${sha3(this.state.nameSearch)}`,
-    setNameSearch: (event) => this.setState({ nameSearch: namehash.normalize(event.target.value), entry: "", bid: ['','','',''] }),
     entry: "",
-    setEntry: (event, nameSearch) => {
-      event.persist();
-      let uintArr = new Uint32Array(10);
-      let salt = `0x${sha3(window.crypto.getRandomValues(uintArr).join(""))}`;
-      if(nameSearch.length > 6) {
-        HashRegistrar.methods.entries(`0x${sha3(nameSearch)}`).call().then(_entry =>
-          this.setState(prevState => ({
-            entry: _entry,
-            bid: [...prevState.bid.map((input, index) => {
-                if (index === 0 && (_entry["0"] === "0" || _entry["0"] === "1")) {
-                  return `0x${sha3(prevState.nameSearch)}`;
-                } else if (index === 3 && (_entry["0"] === "0" || _entry["0"] === "1")) {
-                  return salt;
-                }
-                return input;
-              })]
-          }))
-        );
-      }
-    },
+    entryState: "",
     bid: ['','','',''],
-    setBid: (event, _index) => {
-      event.persist();
-      this.setState(prevState => ({
-        bid: [...prevState.bid.map((param, index) => (
-            _index === index
-            ? event.target.value
-            : param))]
-      }));
-    },
     dialogOpen: false,
     currentAcc: ''
   };
 
+  setNameSearch(event) {
+    this.setState({ nameSearch: namehash.normalize(event.target.value), entry: "", entryState: "", bid: ['','','',''] });
+  }
+
+  async setEntry(event) {
+    event.persist();
+    let { nameSearch } = this.state;
+    if(nameSearch.length > 6) {
+      let { nameSearch } = this.state;
+      let uintArr = new Uint32Array(10);
+      let salt = `0x${sha3(window.crypto.getRandomValues(uintArr).join(""))}`;
+      let _entry = await HashRegistrar.methods.entries(`0x${sha3(nameSearch)}`).call();
+
+      let deedAddr = _entry["1"];
+      let _deedOwner = "";
+      let _ensOwner = "";
+
+      if (deedAddr !== "0x0000000000000000000000000000000000000000") {
+      _deedOwner = await Contract(DeedABI, deedAddr).methods.owner().call();
+      _ensOwner = await ENSRegistry.methods.owner(namehash.hash(`${nameSearch}.eth`)).call();
+      }
+
+      let _entryState = _entry["0"];
+
+      if (_entryState === "4") {
+        salt = "";
+      }
+
+      if (_entryState === "2" && (_deedOwner !== _ensOwner && _ensOwner === "0x0000000000000000000000000000000000000000")) {
+        _entryState = "6";
+      }
+
+      this.setState(prevState => ({
+        entry: _entry,
+        entryState: _entryState,
+        deedOwner: _deedOwner,
+        bid: [...prevState.bid.map((input, index) => {
+            if (index === 0 && ((_entry["0"] === "0" || _entry["0"] === "1") || _entry["0"] === "4")) {
+              return `0x${sha3(prevState.nameSearch)}`;
+            } else if (index === 3 && (_entry["0"] === "0" || _entry["0"] === "1")) {
+              return salt;
+            }
+            return input;
+          })]
+      }));
+
+    }
+  }
+
+  setBid(event, _index) {
+    event.persist();
+    this.setState(prevState => ({
+      bid: [...prevState.bid.map((param, index) => (
+          _index === index
+          ? event.target.value
+          : param))]
+    }));
+  }
+
   handleSearch(event) {
     if(event.key == 'Enter') {
-      this.state.setEntry(event, this.state.nameSearch);
+      this.setEntry(event);
     }
   }
 
@@ -310,10 +380,12 @@ class EnsRegistrar extends React.Component {
   handleBid(event) {
     event.preventDefault();
     this.handleDialog(event, false);
+    let { nameSearch } = this.state;
+    let labelhashed = labelhash(nameSearch);
     let weiArr = this.state.bid.map((value, index) => index === 2 ? web3.utils.toWei(value, "ether") : value)
     if (EmbarkJS.isNewWeb3()) {
       HashRegistrar.methods.shaBid.apply(null, weiArr).call()
-      .then(sealedBid => HashRegistrar.methods.startAuctionsAndBid([this.state.labelhash()], sealedBid)
+      .then(sealedBid => HashRegistrar.methods.startAuctionsAndBid([labelhashed], sealedBid)
       .send({ from: this.state.currenAcc, value: web3.utils.toWei(this.state.bid[2], "ether") })
       );
     } else {
@@ -336,9 +408,9 @@ class EnsRegistrar extends React.Component {
 
   handleFinalize(event) {
     event.preventDefault();
-		
-		let { labelhash, currentAcc } = this.state;
-    HashRegistrar.methods.finalize(labelhash()).send({ from: currentAcc });
+		let { nameSearch, currentAcc } = this.state;
+    let labelhashed = labelhash(nameSearch);
+    HashRegistrar.methods.finalizeAuction(labelhashed).send({ from: currentAcc });
   }
 
   checkAcc(obj) {
@@ -348,7 +420,7 @@ class EnsRegistrar extends React.Component {
   }
 
   componentDidMount() {
-    this.setState({currentAcc: web3.eth.defaultAccount});
+    this.setState({currentAcc: web3.utils.toHex(web3.eth.defaultAccount)});
     web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
   }
 
@@ -410,7 +482,7 @@ class EnsRegistrar extends React.Component {
         style={{ margin: 8 }}
         margin="normal"
         fullWidth
-        onChange={event => this.state.setNameSearch(event)}
+        onChange={event => this.setNameSearch(event)}
         onKeyDown={event => this.handleSearch(event)}
         value={this.state.nameSearch}
         InputProps={{
@@ -423,13 +495,13 @@ class EnsRegistrar extends React.Component {
           color="primary"
           className={classes.button}
           disabled={!(this.state.nameSearch.length > 6)}
-          onClick={event => this.state.setEntry(event, this.state.nameSearch)}
+          onClick={event => this.setEntry(event, this.state.nameSearch)}
           children={`Search`}
         />
       </div>
       </div>
         <div>
-          {entryCheck(this, classes)}
+          {entryCheck(this)}
         </div>
         <div className={classes.toolbar}/>
         {dialog}
