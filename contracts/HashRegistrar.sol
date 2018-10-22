@@ -30,8 +30,8 @@ contract HashRegistrar {
 
     enum Mode { Open, Auction, Owned, Forbidden, Reveal, NotYetAvailable }
 
-    uint32 constant totalAuctionLength = 30 minutes;
-    uint32 constant revealPeriod = 15 minutes;
+    uint32 constant totalAuctionLength = 5 minutes;
+    uint32 constant revealPeriod = 2 minutes;
     uint32 public constant launchLength = 30 seconds;
 
     uint constant minPrice = 0.01 ether;
