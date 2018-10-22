@@ -50,18 +50,20 @@ what works?:
    under the server tab in settings change:
     
    Port Number: 7545 -> Port Number: 8545
-      
-   Automine On -> Automine Off
-      
-   set Mining Block Time (seconds) to 5 or up 
-        
-   (dont let this run for long if you arent using it, it will keep making blocks;
-          
-   have to do this for the now variable in solidity/ganache's EVM to be utd in calls so you could
-          
-   probably just send an empty tx to update now but i havent tried it)
-  
+   
    $ embark run
+   
+   
+   
+   # update the now variable
+   
+   with ganaches automine, calls to the blockchain use the time of the last tx as the now variable in solidity
+          
+   if you want to test any method that should use .call() you should send an empty tx with metamask first to update now
+          
+   
+  
+
     
 
 contact: baseless *at* gmx.com
