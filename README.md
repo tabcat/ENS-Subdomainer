@@ -41,6 +41,20 @@ what works?:
   should have a webpage popup in your defualt brower  
   
   
+  # set up ENS Auction for use:
+  
+  (if you dont know how the ens application contracts work this could be difficult)
+  
+  in the browser tab go to Advanced Utilities > Contract Reader
+  
+  (expanding the Toolbox at the bottom with make this a lot easier)
+  
+  check the owner of the root: (example: Pick a Contract: ENSRegistry, Pick a Method: owner, input: 0x0000000000000000000000000000000000000000000000000000000000000000)
+  
+  setSubnode of the 'eth' to the address the Hashregistrar contract was deployed to (check chains.json in project root)
+  
+  
+  
   # change the blockchain provider:
   
   install ganache: https://truffleframework.com/ganache
