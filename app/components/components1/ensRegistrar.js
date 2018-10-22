@@ -23,27 +23,6 @@ var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
 const labelhash = (label) => `0x${sha3(label)}`
 
-// import Contracts from '../contractABI';
-//
-// const HashRegistrar = Contracts[2];
-// const AuctionObj = HashRegistrar.contractObj;
-// const AuctionABI = HashRegistrar.abi;
-
-
-// if (EmbarkJS.isNewWeb3()) {
-//   Contracts[contract].contractObj.methods[state.methodName()].apply(null, state.inputs)[tx]()
-//     .then((...args) => state.setOutputs(contract, method, args));
-// }
-
-// function getEntry(name) {
-//   let entry;
-//   if (EmbarkJS.isNewWeb3()) {
-//     HashRegistrar.methods.entries(sha3(name)).then(_entryentry => entry = _entry)
-//   }
-//   if (entry) {
-//     return entry;
-//   }
-// }
 
 const styles = theme => ({
   root: {
@@ -75,11 +54,14 @@ const styles = theme => ({
   }
 });
 
-
+// auction.time set to test contracts auction length
+// live auction contract time is:
+// "total": (86400 * 5), // 5 days
+// "reveal": (86400 * 2) // 2 day (48 hours)
 const auction = {
   "time": {
-    "total": (86400 * 5), // 5 days
-    "reveal": (86400 * 2) // 2 day (48 hours)
+    "total": (60 * 5), // 5 min
+    "reveal": (60 * 2) // 2 min
   },
   "mode": {
     "0": (props) => ensOpen(props),
