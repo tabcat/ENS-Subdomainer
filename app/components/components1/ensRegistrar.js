@@ -23,7 +23,6 @@ var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
 const labelhash = (label) => `0x${sha3(label)}`
 
-
 const styles = theme => ({
   root: {
     flexWrap: "wrap"
@@ -54,6 +53,7 @@ const styles = theme => ({
   }
 });
 
+
 // auction.time set to test contracts auction length
 // live auction contract time is:
 // "total": (86400 * 5), // 5 days
@@ -80,10 +80,11 @@ function timeConverter(unixTimestamp){
   var year = a.getFullYear();
   var month = months[a.getMonth()];
   var date = a.getDate();
-  var hour = a.getHours().length === 1 ? '0' + a.getHours() : a.getHours();
-  var min = a.getMinutes().length === 1 ? '0' + a.getMinutes() : a.getMinutes();
-  var sec = a.getSeconds().length === 1 ? '0' + a.getSeconds() : a.getSeconds();
-  var time = date + ' of ' + month + ' ' + year + ' at ' + hour + ':' + min + ':' + sec + ' local time';
+  var hour = `${a.getHours()}`.length === 1 ? '0' + a.getHours() : a.getHours();
+  var min = `${a.getMinutes()}`.length === 1 ? '0' + a.getMinutes() : a.getMinutes();
+  var sec = `${a.getSeconds()}`.length === 1 ? '0' + a.getSeconds() : a.getSeconds();
+  // var time = date + ' of ' + month + ' ' + year + ' at ' + hour + ':' + min + ':' + sec + ' local time';
+  var time = `${date} of ${month}, ${year} at ${hour}:${min} local time`;
   return time;
 }
 
@@ -331,7 +332,7 @@ class EnsRegistrar extends React.Component {
             } else if (index === 3 && (_entry["0"] === "0" || _entry["0"] === "1")) {
               return salt;
             }
-            return input;
+            return "";
           })]
       }));
 
@@ -497,4 +498,4 @@ EnsRegistrar.propTypes = {
   fullScreen: PropTypes.bool.isRequired,
 };
 
-export default withMobileDialog()(withStyles(styles, )(EnsRegistrar));
+export default withMobileDialog()(withStyles(styles)(EnsRegistrar));
