@@ -21,30 +21,40 @@ module.exports = {
       "http://localhost:8545"
     ],
     gas: "auto",
-    contracts: {
-      ENS: {
-        "deploy": false
-      },
+contracts: {
       ENSRegistry: {
-        "fromIndex": 0
+        "deploy": true
       },
       FIFSRegistrar: {
-        "fromIndex": 0,
         "args": [
           "$ENSRegistry", "0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"
         ]
       },
       HashRegistrar: {
-        "fromIndex": 0,
         "args": [
           "$ENSRegistry", "0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae", "0"
+        ],
+        "onDeploy": [
+          `ENSRegistry.methods.setSubnodeOwner(
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0",
+          HashRegistrar.options.address).send()`
         ]
       },
-      SubdomainInterface: {
-        "deploy": false
+      PublicResolver: {
+        "args": [
+          "$ENSRegistry"
+        ]
       },
       SubdomainRegistrar: {
-        "fromIndex": 0,
+        "args": [
+          "$ENSRegistry"
+        ],
+        "onDeploy": [
+          "$HashRegistrar"
+        ]
+      },
+      SubdomainResolver: {
         "args": [
           "$ENSRegistry"
         ]
