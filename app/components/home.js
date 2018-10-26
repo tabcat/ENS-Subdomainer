@@ -29,7 +29,7 @@ class Home extends React.Component {
     return (
       <div className={classes.root}>
         <div>
-          <Typography variant="heading">README</Typography>
+          <Typography variant="title">README</Typography>
           <div className={classes.spacer} />
           <Typography className={classes.spacer} variant="body1">
             Hello, this this is a site for buying <a href="https://ens.domains/" target="_blank">ENS</a> subdomains.
