@@ -15,7 +15,8 @@ import ListItemText from "@material-ui/core/ListItemText";
 
 import EmbarkJS from 'Embark/EmbarkJS';
 
-import Account from './account';
+import Home from './home'
+import EnsSubdomains from './ensSubdomains';
 import Utilities from "./utilities";
 
 const drawerWidth = 240;
@@ -64,66 +65,15 @@ const styles = theme => ({
   },
 });
 
-// const routes = [
-//   {
-//     path: "/",
-//     exact: true,
-//     name: "Dashboard",
-//     heading: () => (
-//       <Typography variant="title" color="inherit" children="Dashboard" noWrap />
-//     ),
-//     sidebar: () => <div>home!</div>,
-//     main: () => <h2>Home</h2>
-//   },
-//   {
-//     path: "/ENS",
-//     heading: () => (
-//       <Typography
-//         variant="title"
-//         color="inherit"
-//         children="Ethereum Name Service"
-//         noWrap
-//       />
-//     ),
-//     sidebar: () => <Ens />,
-//     main: () => <h2>Bubblegum</h2>
-//   },
-//   {
-//     path: "/ContractReader",
-//     heading: () => (
-//       <Typography
-//         variant="title"
-//         color="inherit"
-//         children="Contract Reader"
-//         noWrap
-//       />
-//     ),
-//     sidebar: () => <Reader />,
-//     main: () => <h2>Shoelaces</h2>
-//   },
-//   {
-//     path: "/Utility",
-//     heading: () => (
-//       <Typography
-//         variant="title"
-//         color="inherit"
-//         children="Utility"
-//         noWrap
-//       />
-//     ),
-//     sidebar: () => <Utility />,
-//     main: () => <h2>idk</h2>
-//   }
-// ];
 
 const nav = [
   {
-    name: "Dashboard",
-    component: () => <div>home!</div>
+    name: "Home",
+    component: () => <Home />
   },
   {
-    name: "Account",
-    component: () => <Account />
+    name: "ENS Subdomains",
+    component: () => <EnsSubdomains />
   },
   {
     name: "Advanced Utilities",
