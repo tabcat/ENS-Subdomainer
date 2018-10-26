@@ -1,5 +1,7 @@
 pragma solidity ^0.4.18;
 
+// from: https://github.com/ensdomains/ens/blob/master/contracts/DeedImplementation.sol
+
 /**
  * @title Deed to hold ether in exchange for ownership of a node
  * @dev The deed can be controlled only by the registrar and can only send ether back to the owner.
