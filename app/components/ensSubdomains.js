@@ -23,6 +23,7 @@ import SubdomainResolver from 'Embark/contracts/SubdomainResolver';
 var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
 
+const subnamePrice = web3.utils.toWei('0.002', 'ether');
 
 const styles = theme => ({
   root: {
@@ -94,9 +95,10 @@ const sendTest = (event, props) => {
 class EnsSubdomains extends React.Component {
 
       state = {
-        rootDomain: "subdomain",
+        rootDomain: "",
         name: '', // subdomain.eth
-        available: false,
+        ownable: true,
+        available: "must be longer than 0 characters :P",
         referralAddr: "",
         resolverAddr: "",
         dialogOpen: false,
@@ -109,27 +111,37 @@ class EnsSubdomains extends React.Component {
       }
 
       setName(event) {
-        let string = namehash.normalize(event.target.value);
-        if (!string.includes(".")) {
+        let name = namehash.normalize(event.target.value);
+        if (!name.includes(".")) {
           this.setState({
-            name: string,
+            name: name,
           });
-          this.getAvailability(string);
+          this.getAvailability(name);
         }
       }
 
       async getAvailability(name) {
-        let owned;
+        let { rootDomain } = this.state;
+        let ownable;
+        let availability;
         if (name !== '') {
-          let { rootDomain } = this.state;
-          let namehashed = namehash.hash(this.currentNode(name));
-          let ensOwner = await ENSRegistry.methods.owner(namehashed).call();
-          owned = ensOwner !== "0x0000000000000000000000000000000000000000" ? true : false;
+          let rootDomainOwner = await ENSRegistry.methods.owner(namehash.hash(`${name}${rootDomain}.eth`));
+          if(rootDomainOwner === SubdomainRegistrar.address)  {
+            let namehashed = namehash.hash(this.currentNode(name));
+            let ensOwner = await ENSRegistry.methods.owner(namehashed).call();
+            ownable = ensOwner === "0x0000000000000000000000000000000000000000" ? true : false;
+            availability = ensOwner === "0x0000000000000000000000000000000000000000" ? "available!" : "unavailable :(";
+          } else {
+            ownable = false;
+            availability = "subdomain registration is not configured";
+          }
         } else {
-          owned = true;
+          ownable = false;
+          availability = "must be longer than 0 characters :P";
         }
         this.setState({
-          available: !(owned)
+          ownable: ownable,
+          available: availability
         });
       }
 
@@ -141,7 +153,7 @@ class EnsSubdomains extends React.Component {
         let inputs = [`0x${sha3(rootDomain)}`, name, currentAcc, referralAddr, resolverAddr];
 
         if (EmbarkJS.isNewWeb3()) {
-          SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: web3.utils.toWei('0.002', 'ether') });
+          SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: subnamePrice });
           this.setState({ dialogOpen: false });
         } else {
           console.log(Error("requires web3 api v1 or higher"))
@@ -161,6 +173,7 @@ class EnsSubdomains extends React.Component {
 
       componentDidMount() {
         this.setState({
+          rootDomain: "subdomain",
           referralAddr: "0x232c1526a71A4fD696Bc4B2B7FAA8698A32eB7Fb",
           resolverAddr: SubdomainResolver.address,
           currentAcc: web3.utils.toHex(web3.eth.defaultAccount)
@@ -230,7 +243,7 @@ class EnsSubdomains extends React.Component {
                 InputProps={{
                   endAdornment: <InputAdornment position="end">{`.${this.state.rootDomain}.eth`}</InputAdornment>,
                 }}
-                helperText={this.state.available ? `available` : `unavailable`}
+                helperText={this.state.available}
                 onChange={event => this.setName(event)}
                 value={this.state.name}
               />
@@ -247,7 +260,7 @@ class EnsSubdomains extends React.Component {
               variant="contained"
               color="primary"
               className={classes.button}
-              disabled={!(this.state.available && this.state.name !== '')}
+              disabled={!(this.state.ownable && this.state.name !== '')}
               onClick={event => this.handleDialog(event, true)}
             >
               Register
