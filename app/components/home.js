@@ -60,7 +60,7 @@ class Home extends React.Component {
           </Typography>
           <Divider className={classes.divider}/>
           <Typography className={classes.spacer} variant="body1">
-            this project is: built with <a href="https://github.com/embark-framework/embark" target="_blank">embark!(thank for all the help)</a>; open source!
+            this project is: built with <a href="https://github.com/embark-framework/embark" target="_blank">embark!</a>(thank for all the help); open source!
           </Typography>
           <Typography className={classes.spacer} variant="body1">
             project repo: <a href="https://github.com/tabcat/ENS-Subdomainer" target="_blank">https://github.com/tabcat/ENS-Subdomainer</a>
