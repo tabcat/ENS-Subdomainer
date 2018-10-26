@@ -64,7 +64,7 @@ const styles = theme => ({
   }
 });
 
-const contractList = Contracts.map((contract, index) => (<MenuItem value={index} key={index}>{contract.name}</MenuItem>));
+const contractList = Object.keys(Contracts).map((contract, index) => (<MenuItem value={contract} key={index}>{Contracts[contract].name}</MenuItem>));
 
 const methodList = state => {
 
