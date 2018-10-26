@@ -30,7 +30,7 @@ contract Deed {
         _;
     }
 
-    function Deed(address _owner) public payable {
+    constructor(address _owner) public payable {
         owner = _owner;
         registrar = msg.sender;
         creationDate = now;
