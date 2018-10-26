@@ -36,15 +36,15 @@ class Home extends React.Component {
           </Typography>
           <Typography className={classes.spacer} variant="body1">
             The goal is to eventually use these subdomains as 'user accounts'/identities by having them point
-            to a contract that stores or links to a sort of user configuration/info store.
+            to a contract that stores or links to a sort of user configuration/data store.
             In the contract could be/link to things like a <a href="https://docs.ipfs.io/guides/concepts/cid/" target="_blank">content hash</a>
-            of the user's profile website, an inbox,
+            of the user's profile website, a message inbox,
             identity related user configuration/storage for dapps using this identity for what an email or a google account
             would traditionally be used for,
             messaging addresses/account references, user generated/curated content and ethereum addresses.
           </Typography>
           <Typography className={classes.spacer} variant="body1">
-            A specification of this would allow anyone to build a ui for interacting with these types of 'user accounts'.
+            A specification of this would allow anyone to build a ui for creating/interacting with these types of 'user accounts'.
           </Typography>
           <Typography className={classes.spacer} variant="body1">
             Preferably editting this information/link to would be done off chain (for speed/tx cost/storage) by storing a mutable link,
@@ -56,7 +56,7 @@ class Home extends React.Component {
           </Typography>
           <Typography variant="body1">
             Ethereum's blockchain creates a nice substrate layer so this could hopefully be interacted with by other dapps in
-            the future made by some its bountiful number of devs.
+            the future made by some its large number of devs.
           </Typography>
           <Divider className={classes.divider}/>
           <Typography className={classes.spacer} variant="body1">
