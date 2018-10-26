@@ -8,12 +8,11 @@ import "./HashRegistrarSimplified.sol";
 /**
  * !!!
  *
- * this is a heavily modified version of the SubdomainRegistrar.sol contract from:
+ * this is a modified version of the SubdomainRegistrar.sol contract from:
  * https://github.com/ensdomains/subdomain-registrar/blob/master/contracts/SubdomainRegistrar.sol
  *
  * all rent properties removed
  * all warnings for compiler version 0.4.25 fixed
- *  -added abi.encodePacked to keccak256 functions with string parameters in seller functions
  *  -changed name param to label (hash of name) in buyer functions already only using hashed name
  *  -added emit prefix to event triggers
  *
@@ -137,7 +136,7 @@ contract SubdomainRegistrar is SubdomainInterface {
      * @param resolver The address of the resolver
      */
     function setResolver(bytes32 label, address resolver) public owner_only(label) {
-        bytes32 node = keccak256(abi.encodePacked(TLD_NODE, label));
+        bytes32 node = keccak256(TLD_NODE, label);
         ens.setResolver(node, resolver);
     }
 
@@ -161,8 +160,8 @@ contract SubdomainRegistrar is SubdomainInterface {
      *        when the permanent registrar is replaced. Can only be set to a non-zero
      *        value once.
      */
-    function configureDomainFor(string name, uint price, uint referralFeePPM, address _owner, address _transfer) public owner_only(keccak256(abi.encodePacked(name))) {
-        bytes32 label = keccak256(abi.encodePacked(name));
+    function configureDomainFor(string name, uint price, uint referralFeePPM, address _owner, address _transfer) public owner_only(keccak256(name)) {
+        bytes32 label = keccak256(name);
         Domain storage domain = domains[label];
 
         // Don't allow changing the transfer address once set. Treat 0 as "don't change" for convenience.
@@ -172,7 +171,7 @@ contract SubdomainRegistrar is SubdomainInterface {
             domain.owner = _owner;
         }
 
-        if (keccak256(abi.encodePacked(domain.name)) != label) {
+        if (keccak256(domain.name) != label) {
             // New listing
             domain.name = name;
         }
@@ -227,9 +226,9 @@ contract SubdomainRegistrar is SubdomainInterface {
      * @return referralFeePPM The referral fee for the dapp, in ppm.
      */
     function query(bytes32 label, string subdomain) public view returns (string domain, uint price, uint referralFeePPM) {
-        bytes32 node = keccak256(abi.encodePacked(TLD_NODE, label));
-        bytes32 _label = keccak256(abi.encodePacked(subdomain));
-        bytes32 subnode = keccak256(abi.encodePacked(node, _label));
+        bytes32 node = keccak256(TLD_NODE, label);
+        bytes32 _label = keccak256(subdomain);
+        bytes32 subnode = keccak256(node, _label);
 
         if (ens.owner(subnode) != 0) {
             return ('', 0, 0);
@@ -247,16 +246,16 @@ contract SubdomainRegistrar is SubdomainInterface {
      * @param referrer The address of the account to receive the referral fee.
      */
     function register(bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver) public not_stopped payable {
-        bytes32 domainNode = keccak256(abi.encodePacked(TLD_NODE, label));
-        bytes32 subdomainLabel = keccak256(abi.encodePacked(subdomain));
+        bytes32 domainNode = keccak256(TLD_NODE, label);
+        bytes32 subdomainLabel = keccak256(subdomain);
 
         // Subdomain must not be registered already.
-        require(ens.owner(keccak256(abi.encodePacked(domainNode, subdomainLabel))) == address(0));
+        require(ens.owner(keccak256(domainNode, subdomainLabel)) == address(0));
 
         Domain storage domain = domains[label];
 
         // Domain must be available for registration
-        require(keccak256(abi.encodePacked(domain.name)) == label);
+        require(keccak256(domain.name) == label);
 
         // User must have paid enough
         require(msg.value >= domain.price);
@@ -292,7 +291,7 @@ contract SubdomainRegistrar is SubdomainInterface {
         // Get the subdomain so we can configure it
         ens.setSubnodeOwner(node, label, this);
 
-        bytes32 subnode = keccak256(abi.encodePacked(node, label));
+        bytes32 subnode = keccak256(node, label);
         // Set the subdomain's resolver
         ens.setResolver(subnode, resolver);
 
@@ -318,8 +317,8 @@ contract SubdomainRegistrar is SubdomainInterface {
      * @dev Upgrades the domain to a new registrar.
      * @param name The name of the domain to transfer.
      */
-    function upgrade(string name) public owner_only(keccak256(abi.encodePacked(name))) new_registrar {
-        bytes32 label = keccak256(abi.encodePacked(name));
+    function upgrade(string name) public owner_only(keccak256(name)) new_registrar {
+        bytes32 label = keccak256(name);
         address transferee = domains[label].transferAddress;
 
         require(transferee != 0x0);
@@ -351,11 +350,11 @@ contract SubdomainRegistrar is SubdomainInterface {
      * @dev Migrates the domain to a new registrar.
      * @param name The name of the domain to migrate.
      */
-    function migrate(string name) public owner_only(keccak256(abi.encodePacked(name))) {
+    function migrate(string name) public owner_only(keccak256(name)) {
         require(stopped);
         require(migration != 0x0);
 
-        bytes32 label = keccak256(abi.encodePacked(name));
+        bytes32 label = keccak256(name);
         Domain storage domain = domains[label];
 
         hashRegistrar.transfer(label, migration);
