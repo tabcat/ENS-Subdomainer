@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+// from https://github.com/ensdomains/ens/blob/master/contracts/HashRegistrar.sol
 
 /*
 
