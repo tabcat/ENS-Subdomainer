@@ -384,11 +384,42 @@ class ContractReader extends React.Component {
   }
 
   componentDidMount() {
-    web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+    try {
+      if(web3.currentProvider !== null) {
+        EmbarkJS.onReady(() => {
+          if (EmbarkJS.isNewWeb3()) {
+
+            web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+
+          } else {
+            if (EmbarkJS.Messages.providerName === 'whisper') {
+              console.log(Error(`current web3 api not supported`))
+            } else {
+              console.log(Error(`web3 provider not detected/mounted`))
+            }
+          }
+        });
+      } else {
+        console.log(Error(`web3 provider not detected/mounted`))
+      }
+    }
+    catch(err) {
+      console.log(err);
+    }
   }
 
+
   componentWillUnmount() {
-    web3.currentProvider.publicConfigStore.removeAllListeners();
+    try {
+      if (web3.currentProvider !== null){
+
+        web3.currentProvider.publicConfigStore.removeAllListeners();
+
+      }
+    }
+    catch(err) {
+      console.log(err);
+    }
   }
 
   render() {
