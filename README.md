@@ -7,27 +7,20 @@ warning: this code is sloppy and hasnt been organized
 
 !WIP!
 
-not on a public testnet yet.
-
 what works?:
 
   Contract Reader works pretty well its under 'Advanced Utilities' tab
   
   ENS Auction should work well now
   
-  anything under the 'Accounts' tab is completely useless atm
+  ENS Subdomains tab needs to be configured manually when build and ran locally and not configured yet on Ropsten(waiting for ENS auction to complete :(
 
-
-
-  # if your tx approvals hang you will need to change the blockchain provider (steps below)
+  # live ropsten!
   
-  user accounts (import to your web3 provider):
+  (ENS Subdomain seller not configured yet)
   
-  * deployer account with geth: 52db9f99fec3cbf20e9e0d5d9da7d6ed77c1d32f90480015546322b7e1c5df5b
-  * deployer account with ganache is first account in ganache
+  https://ipfs.io/ipfs/QmSrRgW8pCY37hj22fwFGyiGtgy4dDvHsiD767ZmrXnZwg/index.html
   
-  if you want to test the ENS Auction component you will need to transfer the eth subnode to the HashRegistrar Contract with the Contract Reader under 'Advanced Utilities'
-
   # build with NPM:
   
   $ npm -g install embark
@@ -39,6 +32,16 @@ what works?:
   $ embark run
   
   should have a webpage popup in your defualt brower  
+  
+  # if your tx approvals hang you will need to change the blockchain provider (steps below)
+  
+  user accounts (import to your web3 provider):
+  
+  * deployer account with geth: 52db9f99fec3cbf20e9e0d5d9da7d6ed77c1d32f90480015546322b7e1c5df5b
+  * deployer account with ganache is first account in ganache
+  
+  if you want to test the ENS Auction component you will need to transfer the eth subnode to the HashRegistrar Contract with the Contract Reader under 'Advanced Utilities'
+
   
   
   # set up ENS Auction for use:
