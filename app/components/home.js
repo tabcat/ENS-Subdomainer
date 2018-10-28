@@ -68,6 +68,11 @@ class Home extends React.Component {
           <Typography className={classes.spacer} variant="body1">
             contact: baseless <i>at</i> gmx.com
           </Typography>
+          <div className={classes.spacer}/>
+          <Typography className={classes.spacer} variant="body1">
+            need some test eth?
+            ropsten faucet: <a>https://faucet.ropsten.be/</a>
+          </Typography>
         </div>
       </div>
     );
