@@ -81,6 +81,52 @@ contracts: {
   // used with "embark run testnet"
   testnet: {
   },
+	
+  infura: {
+    deployment:{
+      host: "ropsten.infura.io/v3/REDACTED",
+      port: false,
+      protocol: 'https',
+      type: "rpc",
+      accounts: [
+        {
+          "mnemonic": "REDACTED",
+          "numAddresses": "2"
+        }
+      ]
+    },
+
+    contracts: {
+      ENSRegistry: {
+        fromIndex: 0,
+        "address": "0x112234455C3a32FD11230C42E7Bccd4A84e02010"
+      },
+      FIFSRegistrar: {
+        fromIndex: 0,
+        "address": "0x21397c1A1F4aCD9132fE36Df011610564b87E24b"
+      },
+      HashRegistrar: {
+        fromIndex: 0,
+        "address": "0xc19fD9004B5c9789391679de6d766b981DB94610"
+      },
+      PublicResolver: {
+        fromIndex: 0,
+        "address": "0x4c641fb9bad9b60ef180c31f56051ce826d21a9a"
+      },
+      SubdomainRegistrar: {
+        fromIndex: 0,
+        "args": [
+          "$ENSRegistry"
+        ]
+      },
+      SubdomainResolver: {
+        fromIndex: 0,
+        "args": [
+          "$ENSRegistry"
+        ]
+      }
+    }
+  },
 
   // merges with the settings in default
   // used with "embark run livenet"
