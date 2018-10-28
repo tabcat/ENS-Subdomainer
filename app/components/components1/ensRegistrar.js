@@ -58,10 +58,12 @@ const styles = theme => ({
 // live auction contract time is:
 // "total": (86400 * 5), // 5 days
 // "reveal": (86400 * 2) // 2 day (48 hours)
+let networkType;
+
 const auction = {
   "time": {
-    "total": (60 * 5), // 5 min
-    "reveal": (60 * 2) // 2 min
+    "total": (5 * (networkType === "private" ? 60 : 86400)), // 5 min
+    "reveal": (2 * (networkType === "private" ? 60 : 86400)) // 2 min
   },
   "mode": {
     "0": (props) => ensOpen(props),
@@ -281,136 +283,167 @@ const ensFinal = (props) => {
 }
 
 class EnsRegistrar extends React.Component {
-  state = {
-    nameSearch: "",
-    entry: "",
-    entryState: "",
-    bid: ['','','',''],
-    dialogOpen: false,
-    currentAcc: ''
-  };
 
-  setNameSearch(event) {
-    this.setState({ nameSearch: namehash.normalize(event.target.value), entry: "", entryState: "", bid: ['','','',''] });
-  }
+      state = {
+        nameSearch: "",
+        entry: "",
+        entryState: "",
+        bid: ['','','',''],
+        dialogOpen: false,
+        currentAcc: ''
+      };
 
-  async setEntry(event) {
-    event.persist();
-    let { nameSearch } = this.state;
-    if(nameSearch.length > 6) {
-      let { nameSearch } = this.state;
-      let uintArr = new Uint32Array(10);
-      let salt = `0x${sha3(window.crypto.getRandomValues(uintArr).join(""))}`;
-      let _entry = await HashRegistrar.methods.entries(`0x${sha3(nameSearch)}`).call();
-
-      let deedAddr = _entry["1"];
-      let _deedOwner = "";
-      let _ensOwner = "";
-
-      if (deedAddr !== "0x0000000000000000000000000000000000000000") {
-      _deedOwner = await Contract(DeedABI, deedAddr).methods.owner().call();
-      _ensOwner = await ENSRegistry.methods.owner(namehash.hash(`${nameSearch}.eth`)).call();
+      setNameSearch(event) {
+        this.setState({ nameSearch: namehash.normalize(event.target.value), entry: "", entryState: "", bid: ['','','',''] });
       }
 
-      let _entryState = _entry["0"];
+      async setEntry(event) {
+        event.persist();
+        let { nameSearch } = this.state;
+        if(nameSearch.length > 6) {
+          let { nameSearch } = this.state;
+          let uintArr = new Uint32Array(10);
+          let salt = `0x${sha3(window.crypto.getRandomValues(uintArr).join(""))}`;
+          let _entry = await HashRegistrar.methods.entries(`0x${sha3(nameSearch)}`).call();
 
-      if (_entryState === "4") {
-        salt = "";
+          let deedAddr = _entry["1"];
+          let _deedOwner = "";
+          let _ensOwner = "";
+
+          if (deedAddr !== "0x0000000000000000000000000000000000000000") {
+          _deedOwner = await Contract(DeedABI, deedAddr).methods.owner().call();
+          _ensOwner = await ENSRegistry.methods.owner(namehash.hash(`${nameSearch}.eth`)).call();
+          }
+
+          let _entryState = _entry["0"];
+
+          if (_entryState === "4") {
+            salt = "";
+          }
+
+          if (_entryState === "2" && (_deedOwner !== _ensOwner && _ensOwner === "0x0000000000000000000000000000000000000000")) {
+            _entryState = "6";
+          }
+
+          this.setState(prevState => ({
+            entry: _entry,
+            entryState: _entryState,
+            deedOwner: _deedOwner,
+            bid: [...prevState.bid.map((input, index) => {
+                if (index === 0 && ((_entry["0"] === "0" || _entry["0"] === "1") || _entry["0"] === "4")) {
+                  return `0x${sha3(prevState.nameSearch)}`;
+                } else if (index === 3 && (_entry["0"] === "0" || _entry["0"] === "1")) {
+                  return salt;
+                }
+                return "";
+              })]
+          }));
+
+        }
       }
 
-      if (_entryState === "2" && (_deedOwner !== _ensOwner && _ensOwner === "0x0000000000000000000000000000000000000000")) {
-        _entryState = "6";
+      setBid(event, _index) {
+        event.persist();
+        this.setState(prevState => ({
+          bid: [...prevState.bid.map((param, index) => (
+              _index === index
+              ? event.target.value
+              : param))]
+        }));
       }
 
-      this.setState(prevState => ({
-        entry: _entry,
-        entryState: _entryState,
-        deedOwner: _deedOwner,
-        bid: [...prevState.bid.map((input, index) => {
-            if (index === 0 && ((_entry["0"] === "0" || _entry["0"] === "1") || _entry["0"] === "4")) {
-              return `0x${sha3(prevState.nameSearch)}`;
-            } else if (index === 3 && (_entry["0"] === "0" || _entry["0"] === "1")) {
-              return salt;
-            }
-            return "";
-          })]
-      }));
+      handleSearch(event) {
+        if(event.key == 'Enter') {
+          this.setEntry(event);
+        }
+      }
 
-    }
-  }
+      handleDialog(event, open) {
+        event.preventDefault();
+        this.setState({dialogOpen: open});
+      }
 
-  setBid(event, _index) {
-    event.persist();
-    this.setState(prevState => ({
-      bid: [...prevState.bid.map((param, index) => (
-          _index === index
-          ? event.target.value
-          : param))]
-    }));
-  }
+      handleBid(event) {
+        event.preventDefault();
+        this.handleDialog(event, false);
+        let { nameSearch } = this.state;
+        let labelhashed = labelhash(nameSearch);
+        let weiArr = this.state.bid.map((value, index) => index === 2 ? web3.utils.toWei(value, "ether") : value)
+        if (EmbarkJS.isNewWeb3()) {
+          HashRegistrar.methods.shaBid.apply(null, weiArr).call()
+          .then(sealedBid => HashRegistrar.methods.startAuctionsAndBid([labelhashed], sealedBid)
+          .send({ from: this.state.currenAcc, value: web3.utils.toWei(this.state.bid[2], "ether") })
+          );
+        } else {
+          console.log(Error('need web3 api v1.00^'));
+        }
+      }
 
-  handleSearch(event) {
-    if(event.key == 'Enter') {
-      this.setEntry(event);
-    }
-  }
+      revealBid(event) {
+        event.preventDefault();
 
-  handleDialog(event, open) {
-    event.preventDefault();
-    this.setState({dialogOpen: open});
-  }
+        let value = this.state.bid.map((param, index) => index === 2 ? web3.utils.toWei(param, "ether") : param );
+        let reveal = value.filter((param, index) => index !== 1)
 
-  handleBid(event) {
-    event.preventDefault();
-    this.handleDialog(event, false);
-    let { nameSearch } = this.state;
-    let labelhashed = labelhash(nameSearch);
-    let weiArr = this.state.bid.map((value, index) => index === 2 ? web3.utils.toWei(value, "ether") : value)
-    if (EmbarkJS.isNewWeb3()) {
-      HashRegistrar.methods.shaBid.apply(null, weiArr).call()
-      .then(sealedBid => HashRegistrar.methods.startAuctionsAndBid([labelhashed], sealedBid)
-      .send({ from: this.state.currenAcc, value: web3.utils.toWei(this.state.bid[2], "ether") })
-      );
-    } else {
-      console.log(Error('need web3 api v1.00^'));
-    }
-  }
+        if (EmbarkJS.isNewWeb3()) {
+          HashRegistrar.methods.unsealBid.apply(null, reveal).send({ from: this.state.currenAcc });
+        } else {
+          console.log(Error('need web3 api v1.00^'));
+        }
+      }
 
-  revealBid(event) {
-    event.preventDefault();
+      handleFinalize(event) {
+        event.preventDefault();
+    		let { nameSearch, currentAcc } = this.state;
+        let labelhashed = labelhash(nameSearch);
+        HashRegistrar.methods.finalizeAuction(labelhashed).send({ from: currentAcc });
+      }
 
-    let value = this.state.bid.map((param, index) => index === 2 ? web3.utils.toWei(param, "ether") : param );
-    let reveal = value.filter((param, index) => index !== 1)
+      checkAcc(obj) {
+        if(!(this.state.currentAcc === obj.selectedAddress)) {
+          this.setState({currentAcc: obj.selectedAddress});
+        }
+      }
 
-    if (EmbarkJS.isNewWeb3()) {
-      HashRegistrar.methods.unsealBid.apply(null, reveal).send({ from: this.state.currenAcc });
-    } else {
-      console.log(Error('need web3 api v1.00^'));
-    }
-  }
+      componentDidMount() {
+        try {
+          if(web3.currentProvider !== null) {
+            EmbarkJS.onReady(() => {
+              if (EmbarkJS.isNewWeb3()) {
 
-  handleFinalize(event) {
-    event.preventDefault();
-		let { nameSearch, currentAcc } = this.state;
-    let labelhashed = labelhash(nameSearch);
-    HashRegistrar.methods.finalizeAuction(labelhashed).send({ from: currentAcc });
-  }
+                this.setState({currentAcc: web3.utils.toHex(web3.eth.defaultAccount)});
+                web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+                web3.eth.net.getNetworkType((err, type) => networkType = type);
 
-  checkAcc(obj) {
-    if(!(this.state.currentAcc === obj.selectedAddress)) {
-      this.setState({currentAcc: obj.selectedAddress});
-    }
-  }
+              } else {
+                if (EmbarkJS.Messages.providerName === 'whisper') {
+                  console.log(Error(`current web3 api not supported`))
+                } else {
+                  console.log(Error(`web3 provider not detected/mounted`))
+                }
+              }
+            });
+          } else {
+            console.log(Error(`web3 provider not detected/mounted`))
+          }
+        }
+        catch(err) {
+          console.log(err);
+        }
+      }
 
-  componentDidMount() {
-    this.setState({currentAcc: web3.utils.toHex(web3.eth.defaultAccount)});
-    web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
-  }
+      componentWillUnmount() {
+        try {
+          if (web3.currentProvider !== null){
 
-  componentWillUnmount() {
-    web3.currentProvider.publicConfigStore.removeAllListeners();
-  }
+            web3.currentProvider.publicConfigStore.removeAllListeners();
 
+          }
+        }
+        catch(err) {
+          console.log(err);
+        }
+      }
   // label={input.type}
   // helperText={input.name}
 
