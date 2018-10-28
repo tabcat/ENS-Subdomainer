@@ -81,10 +81,12 @@ const nav = [
   }
 ]
 
-const navList = (state, navArr) => {
+const navList = (props, navArr) => {
 
+  let { selectedIndex } = props.state;
 
   return navArr.map((navObj, index) => {
+
     if (index !== 0) {
     return (
 
@@ -92,8 +94,8 @@ const navList = (state, navArr) => {
           button
           id={navObj.name}
           key={index}
-          selected={state.selectedIndex === index}
-          onClick={event => state.selectContent(index, event)}
+          selected={selectedIndex === index}
+          onClick={event => props.selectContent(index, event)}
 
           >
           <ListItemText primary={navObj.name} />
@@ -112,62 +114,74 @@ const contentRender = (state) => {
 
 
 class NavDrawer extends React.Component {
-  state = {
-    mobileOpen: false,
-    selectedIndex: 0,
-    selectContent: (index) => {
-      this.setState(state => ({
-        selectedIndex: index,
-        mobileOpen: false
-       }))
-    },
-    selectedName: () => {
-      return (
-        <Typography
-          variant="title"
-          color="inherit"
-          children={nav[this.state.selectedIndex].name}
-          noWrap
-        />
-      )
-    }
-  };
 
-  handleDrawerToggle = () => {
-    this.setState(state => ({ mobileOpen: !state.mobileOpen }));
-  };
+      state = {
+        mobileOpen: false,
+        selectedIndex: 0
+      };
 
-  handleListItemClick = index => {
-    this.setState({
-      selectedIndex: index,
-      mobileOpen: false
-    });
-  };
-
-  componentDidMount() {
-  EmbarkJS.onReady(() => {
-    if (EmbarkJS.isNewWeb3()) {
-      EmbarkJS.Messages.Providers.whisper.getWhisperVersion((err, version) => {
-        if (!err)
-          console.log(`web3 provider mounted successfully`)
-        else
-          console.log(err);
-        }
-      );
-    } else {
-      if (EmbarkJS.Messages.providerName === 'whisper') {
-        console.log(Error(`web3 api not supported`))
-      } else {
-        console.log(Error(`web3 provider not detected/mounted`))
+      selectContent = (index) => {
+        this.setState(state => ({
+          selectedIndex: index,
+          mobileOpen: false
+         }))
       }
-    }
 
-    this.setState({
-      selectedIndex: 0,
-      storageEnabled: true
-    });
-  });
-}
+      selectedName = () => {
+        return (
+          <Typography
+            variant="title"
+            color="inherit"
+            children={nav[this.state.selectedIndex].name}
+            noWrap
+          />
+        )
+      }
+
+      handleDrawerToggle = () => {
+        this.setState(state => ({ mobileOpen: !state.mobileOpen }));
+      };
+
+      handleListItemClick = index => {
+        this.setState({
+          selectedIndex: index,
+          mobileOpen: false
+        });
+      };
+
+      componentDidMount() {
+        try {
+          EmbarkJS.onReady(() => {
+            if (EmbarkJS.isNewWeb3()) {
+              EmbarkJS.Messages.Providers.whisper.getWhisperVersion((err, version) => {
+                if (!err) {
+                  console.log(`web3 provider mounted successfully`)
+                } else {
+                  console.log(err);
+                }
+              });
+            } else {
+              if (EmbarkJS.Messages.providerName === 'whisper') {
+                console.log(Error(`current web3 api not supported`))
+              } else {
+                console.log(Error(`web3 provider not detected/mounted`))
+              }
+            }
+
+            this.setState({
+              selectedIndex: 0,
+              storageEnabled: true
+            });
+          });
+        }
+        catch(err) {
+          console.log(err);
+          this.setState({
+            selectedIndex: 0,
+            storageEnabled: false
+          });
+        }
+      }
 
 
   render() {
@@ -176,7 +190,7 @@ class NavDrawer extends React.Component {
     const drawer = (
       <div>
 
-          <div className={classes.toolbar} onClick={event => this.state.selectContent(0)} >
+          <div className={classes.toolbar} onClick={event => this.selectContent(0)} >
             <Typography align="center" variant="headline" >
               {`<Subdomain>.eth`}
             </Typography>
@@ -188,7 +202,7 @@ class NavDrawer extends React.Component {
         <Divider />
         <div className={classes.list}>
           <List component="nav">
-            {navList(this.state, nav)}
+            {navList(this, nav)}
           </List>
         </div>
       </div>
@@ -207,7 +221,7 @@ class NavDrawer extends React.Component {
               >
                 <MenuIcon />
               </IconButton>
-              {this.state.selectedName()}
+              {this.selectedName()}
             </Toolbar>
           </AppBar>
           <Hidden mdUp>
