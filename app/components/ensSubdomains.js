@@ -94,96 +94,126 @@ const sendTest = (event, props) => {
 
 class EnsSubdomains extends React.Component {
 
-      state = {
-        rootDomain: "",
-        name: '', // subdomain.eth
-        ownable: true,
-        available: "must be longer than 0 characters :P",
-        referralAddr: "",
-        resolverAddr: "",
-        dialogOpen: false,
-        currentAcc: ""
-      }
+    state = {
+      rootDomain: "",
+      name: '', // subdomain.eth
+      ownable: true,
+      available: "must be longer than 0 characters :P",
+      referralAddr: "",
+      resolverAddr: "",
+      dialogOpen: false,
+      currentAcc: ""
+    }
 
-      currentNode(name) {
-        let { rootDomain } = this.state;
-        return `${name}.${rootDomain}.eth`;
-      }
+    currentNode(name) {
+      let { rootDomain } = this.state;
+      return `${name}.${rootDomain}.eth`;
+    }
 
-      setName(event) {
-        let name = namehash.normalize(event.target.value);
-        if (!name.includes(".")) {
-          this.setState({
-            name: name,
-          });
-          this.getAvailability(name);
-        }
+    setName(event) {
+      let name = namehash.normalize(event.target.value);
+      if (!name.includes(".")) {
+        this.setState({
+          name: name,
+        });
+        this.getAvailability(name);
       }
+    }
 
-      async getAvailability(name) {
-        let { rootDomain } = this.state;
-        let ownable;
-        let availability;
-        if (name !== '') {
-          let rootDomainOwner = await ENSRegistry.methods.owner(namehash.hash(`${name}${rootDomain}.eth`));
-          if(rootDomainOwner === SubdomainRegistrar.address)  {
-            let namehashed = namehash.hash(this.currentNode(name));
-            let ensOwner = await ENSRegistry.methods.owner(namehashed).call();
-            ownable = ensOwner === "0x0000000000000000000000000000000000000000" ? true : false;
-            availability = ensOwner === "0x0000000000000000000000000000000000000000" ? "available!" : "unavailable :(";
-          } else {
-            ownable = false;
-            availability = "subdomain registration is not configured";
-          }
+    async getAvailability(name) {
+      let { rootDomain } = this.state;
+      let ownable;
+      let availability;
+      if (name !== '') {
+        let rootDomainOwner = await ENSRegistry.methods.owner(namehash.hash(`${name}${rootDomain}.eth`));
+        if(rootDomainOwner === SubdomainRegistrar.address)  {
+          let namehashed = namehash.hash(this.currentNode(name));
+          let ensOwner = await ENSRegistry.methods.owner(namehashed).call();
+          ownable = ensOwner === "0x0000000000000000000000000000000000000000" ? true : false;
+          availability = ensOwner === "0x0000000000000000000000000000000000000000" ? "available!" : "unavailable :(";
         } else {
           ownable = false;
-          availability = "must be longer than 0 characters :P";
+          availability = "subdomain registration is not configured";
         }
-        this.setState({
-          ownable: ownable,
-          available: availability
-        });
+      } else {
+        ownable = false;
+        availability = "must be longer than 0 characters :P";
       }
+      this.setState({
+        ownable: ownable,
+        available: availability
+      });
+    }
 
-      async registerSub(event) {
-        event.preventDefault()
-        let { rootDomain, name, referralAddr, resolverAddr, currentAcc } = this.state;
+    async registerSub(event) {
+      event.preventDefault()
+      let { rootDomain, name, referralAddr, resolverAddr, currentAcc } = this.state;
 
-        // bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver
-        let inputs = [`0x${sha3(rootDomain)}`, name, currentAcc, referralAddr, resolverAddr];
+      // bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver
+      let inputs = [`0x${sha3(rootDomain)}`, name, currentAcc, referralAddr, resolverAddr];
 
-        if (EmbarkJS.isNewWeb3()) {
-          SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: subnamePrice });
-          this.setState({ dialogOpen: false });
+      if (EmbarkJS.isNewWeb3()) {
+        SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: subnamePrice });
+        this.setState({ dialogOpen: false });
+      } else {
+        console.log(Error("requires web3 api v1 or higher"))
+      }
+    }
+
+    handleDialog(event, open) {
+      event.preventDefault();
+      this.setState({dialogOpen: open});
+    }
+
+    checkAcc(obj) {
+      if(!(this.state.currentAcc === obj.selectedAddress)) {
+        this.setState({currentAcc: obj.selectedAddress});
+      }
+    }
+
+    componentDidMount() {
+      try {
+        if(web3.currentProvider !== null) {
+          EmbarkJS.onReady(() => {
+            if (EmbarkJS.isNewWeb3()) {
+
+              this.setState({
+                rootDomain: "subdomain",
+                referralAddr: "0x232c1526a71A4fD696Bc4B2B7FAA8698A32eB7Fb",
+                resolverAddr: SubdomainResolver.address,
+                currentAcc: web3.utils.toHex(web3.eth.defaultAccount)
+              });
+              web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+              
+            } else {
+              if (EmbarkJS.Messages.providerName === 'whisper') {
+                console.log(Error(`current web3 api not supported`))
+              } else {
+                console.log(Error(`web3 provider not detected/mounted`))
+              }
+            }
+          });
         } else {
-          console.log(Error("requires web3 api v1 or higher"))
+          console.log(Error(`web3 provider not detected/mounted`))
         }
       }
-
-      handleDialog(event, open) {
-        event.preventDefault();
-        this.setState({dialogOpen: open});
+      catch(err) {
+        console.log(err);
       }
+    }
 
-      checkAcc(obj) {
-        if(!(this.state.currentAcc === obj.selectedAddress)) {
-          this.setState({currentAcc: obj.selectedAddress});
+    componentWillUnmount() {
+      try {
+        if (web3.currentProvider !== null){
+
+          web3.currentProvider.publicConfigStore.removeAllListeners();
+
         }
       }
-
-      componentDidMount() {
-        this.setState({
-          rootDomain: "subdomain",
-          referralAddr: "0x232c1526a71A4fD696Bc4B2B7FAA8698A32eB7Fb",
-          resolverAddr: SubdomainResolver.address,
-          currentAcc: web3.utils.toHex(web3.eth.defaultAccount)
-        });
-        web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+      catch(err) {
+        console.log(err);
       }
-
-      componentWillUnmount() {
-        web3.currentProvider.publicConfigStore.removeAllListeners();
-      }
+    }
 
   render() {
 
