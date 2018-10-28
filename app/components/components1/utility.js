@@ -97,39 +97,44 @@ class Utility extends React.Component {
       }
 
       componentDidMount() {
-        this.setState({currentAcc: web3.eth.defaultAccount});
-        web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+        try {
+          if(web3.currentProvider !== null) {
+            EmbarkJS.onReady(() => {
+              if (EmbarkJS.isNewWeb3()) {
+
+                this.setState({currentAcc: web3.eth.defaultAccount});
+                web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+
+              } else {
+                if (EmbarkJS.Messages.providerName === 'whisper') {
+                  console.log(Error(`current web3 api not supported`))
+                } else {
+                  console.log(Error(`web3 provider not detected/mounted`))
+                }
+              }
+            });
+          } else {
+            console.log(Error(`web3 provider not detected/mounted`))
+          }
+        }
+        catch(err) {
+          console.log(err);
+        }
       }
+
 
       componentWillUnmount() {
-        web3.currentProvider.publicConfigStore.removeAllListeners();
+        try {
+          if (web3.currentProvider !== null){
+
+            web3.currentProvider.publicConfigStore.removeAllListeners();
+
+          }
+        }
+        catch(err) {
+          console.log(err);
+        }
       }
-
-      // <Typography variant="title" children="Create Account" />
-
-      // <Input
-      //   className={classes.input}
-      //   variant="outlined"
-      //   placeholder="example"
-      //   inputProps={{
-      //     "aria-label": "Description",
-      //     endadornment: <InputAdornment position="end">Kg</InputAdornment>,
-      //   }}
-      //   onChange={event => this.state.setStr(event)}
-      //   value={this.state.name}
-      // />
-
-      // <div className={classes.indent}>
-      //   <div className={classes.field}>
-      //     <Button
-      //       variant="contained"
-      //       color="primary"
-      //       className={classes.button}
-      //     >
-      //       Register
-      //     </Button>
-      //   </div>
-      // </div>
 
   render() {
 
