@@ -14,6 +14,8 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 
+import TxSnackbar from './snackbar';
+
 import ENSRegistry from 'Embark/contracts/ENSRegistry';
 import HashRegistrar from 'Embark/contracts/HashRegistrar';
 const Contract = (abi, addr) => new web3.eth.Contract(abi, addr);
@@ -21,7 +23,7 @@ import DeedABI from './DeedABI';
 
 var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
-const labelhash = (label) => `0x${sha3(label)}`
+const labelhash = (label) => `0x${sha3(label)}`;
 
 const styles = theme => ({
   root: {
@@ -290,6 +292,8 @@ class EnsRegistrar extends React.Component {
         entryState: "",
         bid: ['','','',''],
         dialogOpen: false,
+        snack: false,
+        tx: "",
         currentAcc: ''
       };
 
@@ -301,10 +305,9 @@ class EnsRegistrar extends React.Component {
         event.persist();
         let { nameSearch } = this.state;
         if(nameSearch.length > 6) {
-          let { nameSearch } = this.state;
           let uintArr = new Uint32Array(10);
-          let salt = `0x${sha3(window.crypto.getRandomValues(uintArr).join(""))}`;
-          let _entry = await HashRegistrar.methods.entries(`0x${sha3(nameSearch)}`).call();
+          let salt = labelhash(window.crypto.getRandomValues(uintArr).join(""));
+          let _entry = await HashRegistrar.methods.entries(labelhash(nameSearch)).call();
 
           let deedAddr = _entry["1"];
           let _deedOwner = "";
@@ -373,6 +376,8 @@ class EnsRegistrar extends React.Component {
           HashRegistrar.methods.shaBid.apply(null, weiArr).call()
           .then(sealedBid => HashRegistrar.methods.startAuctionsAndBid([labelhashed], sealedBid)
           .send({ from: this.state.currenAcc, value: web3.utils.toWei(this.state.bid[2], "ether") })
+          .on("transactionHash", (hash) => this.handleTxHash(null, hash))
+          .on("error", (err) => this.handleTxHash(err, undefined))
           );
         } else {
           console.log(Error('need web3 api v1.00^'));
@@ -386,7 +391,8 @@ class EnsRegistrar extends React.Component {
         let reveal = value.filter((param, index) => index !== 1)
 
         if (EmbarkJS.isNewWeb3()) {
-          HashRegistrar.methods.unsealBid.apply(null, reveal).send({ from: this.state.currenAcc });
+          HashRegistrar.methods.unsealBid.apply(null, reveal).send({ from: this.state.currenAcc })
+          .then((err, tx) => this.handleTxhash(err, tx));
         } else {
           console.log(Error('need web3 api v1.00^'));
         }
@@ -396,8 +402,43 @@ class EnsRegistrar extends React.Component {
         event.preventDefault();
     		let { nameSearch, currentAcc } = this.state;
         let labelhashed = labelhash(nameSearch);
-        HashRegistrar.methods.finalizeAuction(labelhashed).send({ from: currentAcc });
+        HashRegistrar.methods.finalizeAuction(labelhashed).send({ from: currentAcc })
+        .then((err, tx) => this.handleTxhash(err, tx));
       }
+
+      handleTxHash(_err, _tx) {
+        let txState;
+        if (_err === null && typeof _tx === "string") {
+          txState = {
+            variant: "success",
+            message: (
+              <div>
+                tx sent: <a href={"https://ropsten.etherscan.io/tx/" + _tx} target="_blank">Etherscan.io</a>
+              </div>
+            )
+          }
+        } else {
+          txState = {
+            variant: "error",
+            message: (
+              <div>
+                Error: {_err.message}
+              </div>
+            )
+          }
+        }
+        this.setState({
+          snack: true,
+          tx: txState
+        });
+      }
+
+      snackClose = (event, reason) => {
+        if (reason === 'clickaway') {
+          return;
+        }
+        this.setState({ snack: false });
+      };
 
       checkAcc(obj) {
         if(!(this.state.currentAcc === obj.selectedAddress)) {
@@ -521,6 +562,7 @@ class EnsRegistrar extends React.Component {
         </div>
         <div className={classes.toolbar}/>
         {dialog}
+        <TxSnackbar snack={this.state.snack} tx={this.state.tx} onClose={this.snackClose}/>
       </div>
     );
   }
