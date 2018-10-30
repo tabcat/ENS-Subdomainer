@@ -15,7 +15,7 @@ import ToolBox from './components1/toolbox';
 
 const styles = {
   root: {
-    flexGrow: 1,
+    width: "100%",
   },
 };
 
@@ -44,9 +44,9 @@ class CenteredTabs extends React.Component {
     const { classes } = this.props;
 
     return (
-      <div>
+      <div className={classes.root}>
         <div>
-        <Paper className={classes.root}>
+        <Paper>
           <Tabs
             value={this.state.value}
             onChange={this.handleChange}
