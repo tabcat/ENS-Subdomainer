@@ -3,7 +3,7 @@ client side ui for buying ENS subdomains from a registrar
 
 built with embark framework: https://github.com/embark-framework/embark
 
-warning: this code is sloppy and hasnt been organized
+warning: this code is sloppy and hasnt been organized, will probably remain a draft
 
 !WIP!
 
