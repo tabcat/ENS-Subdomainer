@@ -9,7 +9,7 @@ module.exports = {
       // Accounts to use instead of the default account to populate your wallet
 			accounts: [
         {
-          privateKey: "C87509A1C067BBDE78BEB793E6FA76530B6382A4C0241E5E4A9EC0A0F44DC0D3",
+          privateKey: "eb1895733469f67648ffa031ccb663e7bd15f3de3311bec9f6b9d077ee650fa2",
           balance: "100 ether"
         }
       ]
@@ -21,16 +21,19 @@ module.exports = {
       "http://localhost:8545"
     ],
     gas: "auto",
-contracts: {
+    contracts: {
       ENSRegistry: {
+        "fromIndex": 0,
         "deploy": true
       },
       FIFSRegistrar: {
+        "fromIndex": 0,
         "args": [
           "$ENSRegistry", "0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"
         ]
       },
       HashRegistrar: {
+        "fromIndex": 0,
         "args": [
           "$ENSRegistry", "0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae", "0"
         ],
@@ -38,15 +41,17 @@ contracts: {
           `ENSRegistry.methods.setSubnodeOwner(
           "0x0000000000000000000000000000000000000000000000000000000000000000",
           "0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0",
-          HashRegistrar.options.address).send()`
+          HashRegistrar.options.address).send({ gas: "600000" })`
         ]
       },
       PublicResolver: {
+        "fromIndex": 0,
         "args": [
           "$ENSRegistry"
         ]
       },
       SubdomainRegistrar: {
+        "fromIndex": 0,
         "args": [
           "$ENSRegistry"
         ],
@@ -55,6 +60,7 @@ contracts: {
         ]
       },
       SubdomainResolver: {
+        "fromIndex": 0,
         "args": [
           "$ENSRegistry"
         ]
@@ -81,7 +87,7 @@ contracts: {
   // used with "embark run testnet"
   testnet: {
   },
-	
+
   infura: {
     deployment:{
       host: "ropsten.infura.io/v3/REDACTED",
@@ -127,7 +133,6 @@ contracts: {
       }
     }
   },
-
   // merges with the settings in default
   // used with "embark run livenet"
   livenet: {
