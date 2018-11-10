@@ -8,6 +8,9 @@ import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 
+import { connect } from 'react-redux';
+import store from '../store';
+
 import ContractReader from './components1/contractReader';
 import EnsRegistrar from './components1/ensRegistrar';
 
@@ -19,37 +22,38 @@ const styles = {
   },
 };
 
-const tabContent = (props) => {
-  switch(props.state.value) {
+const tabContent = (comp) => {
+  switch(comp.props.currentTab) {
     case 0:
       return (<ContractReader />);
-      break;
     case 1:
       return (<EnsRegistrar />);
-      break;
-
   }
 }
 
 class CenteredTabs extends React.Component {
-  state = {
-    value: 0,
-  };
+  // state = {
+  //   value: 0,
+  // };
 
-  handleChange = (event, value) => {
-    this.setState({ value });
+  changeTab = (event, value) => {
+    // this.setState({ value });
+    store.dispatch({
+      type: 'SET_UTIL_TAB',
+      currentTab: value
+    })
   };
 
   render() {
-    const { classes } = this.props;
+    const { classes, currentTab } = this.props;
 
     return (
       <div className={classes.root}>
         <div>
         <Paper>
           <Tabs
-            value={this.state.value}
-            onChange={this.handleChange}
+            value={currentTab}
+            onChange={this.changeTab}
             indicatorColor="primary"
             textColor="primary"
             scrollable
@@ -69,8 +73,14 @@ class CenteredTabs extends React.Component {
   }
 }
 
+const mapStateToProps = function(store) {
+  return {
+    currentTab: store.advancedUtilState.currentTab
+  };
+}
+
 CenteredTabs.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(CenteredTabs);
+export default connect(mapStateToProps)(withStyles(styles)(CenteredTabs));
