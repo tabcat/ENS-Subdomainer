@@ -177,7 +177,7 @@ class NavDrawer extends React.Component {
 
       checkAcc(obj) {
         let { currentAcc } = this.props;
-        if(!(currentAcc === obj.selectedAddress) && currentAcc !== undefined) {
+        if(!(currentAcc === obj.selectedAddress) && (currentAcc !== undefined && obj.selectedAddress !== undefined)) {
           // this.setState({currentAcc: obj.selectedAddress});
           store.dispatch({
             type: 'SET_ADDR',
