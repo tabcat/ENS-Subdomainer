@@ -8,12 +8,8 @@ import Button from "@material-ui/core/Button";
 import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import withMobileDialog from '@material-ui/core/withMobileDialog';
+import { connect } from 'react-redux';
+import store from '../store';
 
 import EmbarkJS from 'Embark/EmbarkJS';
 import ENSRegistry from 'Embark/contracts/ENSRegistry';
@@ -22,6 +18,7 @@ import SubdomainResolver from 'Embark/contracts/SubdomainResolver';
 
 var namehash = require('eth-ens-namehash');
 var sha3 = require('js-sha3').keccak_256;
+const toHex = (str) => web3.utils.toHex(str);
 
 const subnamePrice = web3.utils.toWei('0.002', 'ether');
 
@@ -78,9 +75,9 @@ const styles = theme => ({
   }
 });
 
-const sendTest = (event, props) => {
+const sendTest = (event, comp) => {
   event.preventDefault()
-  let { rootDomain, name, referralAddr, currentAcc } = props.state;
+  let { rootDomain, name, currentAcc, referralAddr, resolverAddr } = comp.props;
 
   // bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver
   let inputs = [rootDomain, name, currentAcc, referralAddr, resolverAddr];
@@ -94,39 +91,32 @@ const sendTest = (event, props) => {
 
 class EnsSubdomains extends React.Component {
 
-    state = {
-      rootDomain: "",
-      name: '', // subdomain.eth
-      ownable: true,
-      available: "must be longer than 0 characters :P",
-      referralAddr: "",
-      resolverAddr: "",
-      dialogOpen: false,
-      currentAcc: ""
-    }
-
     currentNode(name) {
-      let { rootDomain } = this.state;
+      let { rootDomain } = this.props;
       return `${name}.${rootDomain}.eth`;
     }
 
     setName(event) {
-      let name = namehash.normalize(event.target.value);
-      if (!name.includes(".")) {
-        this.setState({
-          name: name,
-        });
-        this.getAvailability(name);
+      let newSubnameSearch = namehash.normalize(event.target.value);
+      if (!newSubnameSearch.includes(".")) {
+        // this.setState({
+        //   name: name,
+        // });
+        store.dispatch({
+          type: 'SET_SUBNAME_SEARCH',
+          subnameSearch: newSubnameSearch
+        })
+        this.getAvailability(newSubnameSearch);
       }
     }
 
     async getAvailability(name) {
-      let { rootDomain } = this.state;
+      let { rootDomain } = this.props;
       let ownable;
       let availability;
       if (name !== '') {
-        let rootDomainOwner = await ENSRegistry.methods.owner(namehash.hash(`${name}${rootDomain}.eth`));
-        if(rootDomainOwner === SubdomainRegistrar.address)  {
+        let rootDomainOwner = await ENSRegistry.methods.owner(namehash.hash(`${rootDomain}.eth`)).call();
+        if(toHex(rootDomainOwner) === toHex(SubdomainRegistrar.address))  {
           let namehashed = namehash.hash(this.currentNode(name));
           let ensOwner = await ENSRegistry.methods.owner(namehashed).call();
           ownable = ensOwner === "0x0000000000000000000000000000000000000000" ? true : false;
@@ -139,111 +129,49 @@ class EnsSubdomains extends React.Component {
         ownable = false;
         availability = "must be longer than 0 characters :P";
       }
-      this.setState({
-        ownable: ownable,
-        available: availability
-      });
+      // this.setState({
+      //   ownable: ownable,
+      //   available: availability
+      // });
+      store.dispatch({
+        type: 'SET_AVAIL',
+        ownable,
+        availability
+      })
     }
 
-    async registerSub(event) {
-      event.preventDefault()
-      let { rootDomain, name, referralAddr, resolverAddr, currentAcc } = this.state;
-
-      // bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver
-      let inputs = [`0x${sha3(rootDomain)}`, name, currentAcc, referralAddr, resolverAddr];
-
-      if (EmbarkJS.isNewWeb3()) {
-        SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: subnamePrice });
-        this.setState({ dialogOpen: false });
-      } else {
-        console.log(Error("requires web3 api v1 or higher"))
-      }
-    }
+    // async registerSub(event) {
+    //   event.preventDefault()
+    //   let { rootDomain, name, referralAddr, resolverAddr, currentAcc } = this.props;
+    //
+    //   // bytes32 label, string subdomain, address subdomainOwner, address referrer, address resolver
+    //   let inputs = [`0x${sha3(rootDomain)}`, name, currentAcc, referralAddr, resolverAddr];
+    //
+    //   if (EmbarkJS.isNewWeb3()) {
+    //     SubdomainRegistrar.methods.register.apply(null, inputs).send({ from: currentAcc, value: subnamePrice });
+    //     // this.setState({ dialogOpen: false });
+    //     store.dispatch({
+    //       type: 'TOGGLE_DIALOG',
+    //       dialog: false
+    //     })
+    //   } else {
+    //     console.log(Error("requires web3 api v1 or higher"))
+    //   }
+    // }
 
     handleDialog(event, open) {
       event.preventDefault();
-      this.setState({dialogOpen: open});
-    }
-
-    checkAcc(obj) {
-      if(!(this.state.currentAcc === obj.selectedAddress)) {
-        this.setState({currentAcc: obj.selectedAddress});
-      }
-    }
-
-    componentDidMount() {
-      try {
-        if(web3.currentProvider !== null) {
-          EmbarkJS.onReady(() => {
-            if (EmbarkJS.isNewWeb3()) {
-
-              this.setState({
-                rootDomain: "subdomain",
-                referralAddr: "0x232c1526a71A4fD696Bc4B2B7FAA8698A32eB7Fb",
-                resolverAddr: SubdomainResolver.address,
-                currentAcc: web3.utils.toHex(web3.eth.defaultAccount)
-              });
-              web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
-              
-            } else {
-              if (EmbarkJS.Messages.providerName === 'whisper') {
-                console.log(Error(`current web3 api not supported`))
-              } else {
-                console.log(Error(`web3 provider not detected/mounted`))
-              }
-            }
-          });
-        } else {
-          console.log(Error(`web3 provider not detected/mounted`))
-        }
-      }
-      catch(err) {
-        console.log(err);
-      }
-    }
-
-    componentWillUnmount() {
-      try {
-        if (web3.currentProvider !== null){
-
-          web3.currentProvider.publicConfigStore.removeAllListeners();
-
-        }
-      }
-      catch(err) {
-        console.log(err);
-      }
+      // this.setState({dialogOpen: open});
+      store.dispatch({
+        type: 'SET_DIALOG',
+        dialogOpen: true,
+        dialogAction: 'SUBNAME_REGI'
+      })
     }
 
   render() {
 
-    const { classes, theme, fullScreen } = this.props;
-
-    const dialog = (
-      <div>
-        <Dialog
-          fullScreen={fullScreen}
-          open={this.state.dialogOpen}
-          onClose={event => this.handleDialog(event,false)}
-          aria-labelledby="responsive-dialog-title"
-        >
-          <DialogTitle id="responsive-dialog-title">{`Are you sure you want to register ${this.currentNode(this.state.name)} for 0.002eth?`}</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={event => this.handleDialog(event, false)} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={event => this.registerSub(event)} color="primary" autoFocus>
-              Confirm
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </div>
-    )
+    const { classes, theme, rootDomain, subnameSearch } = this.props;
 
     return (
       <div className={classes.root}>
@@ -271,11 +199,11 @@ class EnsSubdomains extends React.Component {
                 variant="outlined"
                 placeholder={`subname`}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">{`.${this.state.rootDomain}.eth`}</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">{`.${rootDomain}.eth`}</InputAdornment>,
                 }}
-                helperText={this.state.available}
+                helperText={this.props.availability}
                 onChange={event => this.setName(event)}
-                value={this.state.name}
+                value={subnameSearch}
               />
             </div>
             <div className={classes.spacer} />
@@ -290,25 +218,35 @@ class EnsSubdomains extends React.Component {
               variant="contained"
               color="primary"
               className={classes.button}
-              disabled={!(this.state.ownable && this.state.name !== '')}
+              disabled={!(this.props.ownable && this.props.name !== '')}
               onClick={event => this.handleDialog(event, true)}
             >
               Register
             </Button>
           </div>
         </div>
-        <div>
-          {dialog}
-        </div>
       </div>
     );
   }
 }
 
+const mapStateToProps = function(store) {
+  let { subnameSearch, ownable, availability, dialogOpen } = store.subnameState;
+  return {
+    subnameSearch,
+    ownable,
+    availability,
+    dialogOpen,
+    rootDomain: store.appConfigState.rootDomain,
+    referralAddr: store.appConfigState.referralAddr,
+    resolverAddr: store.appConfigState.resolverAddr,
+    currentAcc: store.web3State.currentAcc
+  };
+}
+
 EnsSubdomains.propTypes = {
   classes: PropTypes.object.isRequired,
   theme: PropTypes.object.isRequired,
-  fullScreen: PropTypes.bool.isRequired,
 };
 
-export default withMobileDialog()(withStyles(styles, { withTheme: true })(EnsSubdomains));
+export default connect(mapStateToProps)(withStyles(styles, { withTheme: true })(EnsSubdomains));
