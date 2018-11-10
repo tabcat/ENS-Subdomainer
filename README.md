@@ -17,7 +17,7 @@ what works?:
 
   # live ropsten!
   
-  (ENS Subdomain seller not configured yet)
+  Subdomain seller has been configured
   
   https://ipfs.io/ipfs/QmSrRgW8pCY37hj22fwFGyiGtgy4dDvHsiD767ZmrXnZwg/index.html
   
