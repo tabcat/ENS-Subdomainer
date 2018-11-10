@@ -11,6 +11,9 @@ import TextField from "@material-ui/core/TextField";
 import Divider from "@material-ui/core/Divider";
 import Button from "@material-ui/core/Button";
 
+import { connect } from 'react-redux';
+import store from '../../store';
+
 import EmbarkJS from 'Embark/EmbarkJS';
 
 import Contracts from "../contractABIs";
@@ -64,14 +67,13 @@ const styles = theme => ({
   }
 });
 
-const contractList = Object.keys(Contracts).map((contract, index) => (<MenuItem value={contract} key={index}>{Contracts[contract].name}</MenuItem>));
+const contractList = Object.keys(Contracts).map((contract, index) =>
+(<MenuItem value={contract} key={index}>{Contracts[contract].name}</MenuItem>));
 
-const methodList = state => {
-
-  if (state.contract !== "") {
-
-    return Contracts[state.contract].abi.map((method, index) => {
-
+const methodList = comp => {
+  let { contract } = comp.props;
+  if (contract !== "") {
+    return Contracts[contract].abi.map((method, index) => {
       if (method.type === "function") {
         return <MenuItem value={index} key={index}>{method.name}</MenuItem>;
       }
@@ -79,19 +81,20 @@ const methodList = state => {
   }
 };
 
-const selected = state => {
-  if (state.contract !== "") {
-    if (state.method !== "") {
-      return `${state.contractName()} / ${state.methodName()}`;
+const selected = comp => {
+  let { contract, method } = comp.props;
+  let { contractName, methodName } = comp;
+  if (contract !== "") {
+    if (method !== "") {
+      return `${contractName(contract)} / ${methodName(contract, method)}`;
     } else {
-      return `${state.contractName()}`;
+      return `${contractName(contract)}`;
     }
   }
 };
 
-const methodInputs = (state, classes) => {
-  let contract = state.contract;
-  let method = state.method;
+const methodInputs = (comp) => {
+  let { classes, contract, method, inputs } = comp.props;
   if (contract !== "" && method !== "") {
     return Contracts[contract].abi[method].inputs.map((input, index) => {
       return (<div className={classes.flex} key={index}>
@@ -106,15 +109,16 @@ const methodInputs = (state, classes) => {
           style={{ margin: 8 }}
           margin="normal"
           fullWidth
-          onChange={event => state.setInputs(event, index)}
-          value={state.inputs[index]}/>
+          onChange={event => comp.setInputs(event, index)}
+          value={inputs[index]}/>
       </div>);
     });
   }
 };
 
-const valueInput = (state, classes) => {
-  if (Contracts[state.contract].abi[state.method].payable) {
+const valueInput = (comp) => {
+  let { classes, contract, method, msgValue } = comp.props;
+  if (Contracts[contract].abi[method].payable) {
     return(
       <div>
       <Typography align="center" variant="subheading" children={`msg.value`}/>
@@ -125,28 +129,26 @@ const valueInput = (state, classes) => {
         style={{ margin: 8 }}
         margin="normal"
         fullWidth
-        onChange={event => state.setMsgValue(event)}
-        value={state.msgValue}/>
+        onChange={event => comp.setMsgValue(event)}
+        value={msgValue}/>
       </div>
     )
   }
 }
 
-const methodOutputs = (state, classes) => {
-  let contract = state.contract;
-  let method = state.method;
+const methodOutputs = (comp) => {
+  let { classes, contract, method, outputs } = comp.props;
   if (contract !== "" && method !== "") {
-    return state.outputTypes(contract, method).map((type, index) => {
+    return comp.outputTypes(contract, method).map((type, index) => {
       return (
         <div className={classes.flex} key={index}>
-          {/* <div className={classes.inputName} /> */}
         <TextField
           className={classes.textField}
           label={type}
           variant="outlined"
           style={{ margin: 8 }}
           margin="normal"
-          value={state.outputs[index]}
+          value={outputs[index]}
           InputProps={{
             readOnly: true,
           }}
@@ -158,28 +160,26 @@ const methodOutputs = (state, classes) => {
   }
 };
 
-const methodCheck = (props, classes) => {
-  let state = props.state;
+const methodCheck = (comp) => {
+  let { classes, method } = comp.props;
 
-  if(state.method !== "") {
-    //let outputCheck = (Contracts[state.contract].abi[state.method].outputs)
-
+  if(method !== "") {
     return(
       <div>
       <div className={classes.textField}>
         <Typography align="center" variant="subheading" children={`Input`}/>
-        {methodInputs(state, classes)}
-        {valueInput(state, classes)}
+        {methodInputs(comp)}
+        {valueInput(comp)}
         <Divider className={classes.divider}/>
       </div>
       <div className={classes.spacer}/>
       <div className={classes.spacer}/>
       <div className={classes.spacer}/>
-      {outputCheck(props, classes)}
+      {outputCheck(comp)}
       <div className={classes.toolbar}/>
       <div>
 
-        {txButton(props, classes)}
+        {txButton(comp)}
 
       </div>
     </div>
@@ -187,30 +187,30 @@ const methodCheck = (props, classes) => {
   }
 }
 
-const outputCheck = (props, classes) => {
-  let state = props.state;
-  if(Contracts[state.contract].abi[state.method].outputs.length !== 0) {
+const outputCheck = (comp) => {
+  let { classes, contract, method } = comp.props;
+  if(Contracts[contract].abi[method].outputs.length !== 0) {
     return(
       <div className={classes.textField}>
         <Typography align="center" variant="subheading" children={`Output`}/>
-        {methodOutputs(state, classes)}
+        {methodOutputs(comp)}
       </div>
     )
   }
 }
 
-const txButton = (props, classes) => {
-  let state = props.state
+const txButton = (comp) => {
+  let { classes, method, inputs } = comp.props;
 
-  if (state.method !== "") {
+  if (method !== "") {
     return (
       <div className={classes.flex}>
       <Button
         variant="contained"
         color="primary"
         className={classes.button}
-        disabled={!(state.inputs.find(value => value === "") === undefined)}
-        onClick={event => confirm(event, props)}
+        disabled={!(inputs.find(value => value === "") === undefined)}
+        onClick={event => comp.confirm(event, comp)}
         >
         Confirm
       </Button>
@@ -219,224 +219,252 @@ const txButton = (props, classes) => {
   }
 };
 
-function confirm(event, props) {
-  event.preventDefault()
-
-  let state = props.state;
-  let { contract, method, msgValue, currentAcc } = props.state;
-  let methodABI = Contracts[contract].abi[method];
-
-  let inputs = state.inputs.map((input, index) => {
-    if (methodABI.inputs[index].type[methodABI.inputs[index].type.length-1] === "]") {
-      return input.replace(/\s/g,'').split(",");
-    }
-    return input;
-  })
-
-  let tx = Contracts[contract].abi[method].constant === true
-    ? 'call'
-    : 'send';
-
-  let txConfig = Contracts[contract].abi[method].payable
-    ? { from: currentAcc, value: web3.utils.toWei(msgValue, "ether") }
-    : { from: currentAcc }
-
-    // if (tx === 'call') {
-    //   if (EmbarkJS.isNewWeb3()) {
-    //     Contracts[state.contract].contractObj.methods[state.methodName()].apply(null, state.inputs)[tx]()
-    //       .then(_value => props.setState({output: _value}));
-    //   } else {
-    //     Contracts[state.contract].contractObj[state.methodName()].apply(null, state.inputs);
-    //   }
-    // }
-
-  if (tx === 'call') {
-    if (EmbarkJS.isNewWeb3()) {
-      Contracts[contract].contractObj.methods[state.methodName()].apply(null, inputs)[tx]()
-        .then((value) => state.setOutputs(contract, method, value));
-    } else {
-      Contracts[contract].contractObj[state.methodName()].apply(null, inputs)
-        .then((value) => state.setOutputs(contract, method, value));
-    }
-  } else {
-    if (EmbarkJS.isNewWeb3()) {
-      Contracts[contract].contractObj.methods[state.methodName()].apply(null, inputs)[tx](txConfig);
-    } else {
-      Contracts[contract].contractObj[state.methodName()].apply(null, inputs);
-    }
-  }
-}
+// function confirm(event, comp) {
+//   event.preventDefault()
+//   let { contract, method, msgValue, inputs, currentAcc } = comp.props;
+//   let { methodName } = comp;
+//   let methodABI = Contracts[contract].abi[method];
+//
+//   let appliedInputs = inputs.map((input, index) => {
+//     if (methodABI.inputs[index].type[methodABI.inputs[index].type.length-1] === "]") {
+//       return input.replace(/\s/g,'').split(",");
+//     }
+//     return input;
+//   })
+//
+//   let tx = Contracts[contract].abi[method].constant === true
+//     ? 'call'
+//     : 'send';
+//
+//   let txConfig = Contracts[contract].abi[method].payable
+//     ? { from: currentAcc, value: web3.utils.toWei(msgValue, "ether") }
+//     : { from: currentAcc }
+//
+//   if (tx === 'call') {
+//     if (EmbarkJS.isNewWeb3()) {
+//       Contracts[contract].contractObj.methods[methodName(contract, method)].apply(null, appliedInputs)[tx]()
+//         .then((value) => comp.setOutputs(value));
+//     } else {
+//       console.error('web3 api not supported');
+//     }
+//   } else {
+//     if (EmbarkJS.isNewWeb3()) {
+//       Contracts[contract].contractObj.methods[methodName(contract, method)].apply(null, appliedInputs)[tx](txConfig);
+//     } else {
+//       console.error('web3 api not supported');
+//     }
+//   }
+// }
 
 
 class ContractReader extends React.Component {
-  state = {
-    contract: "",
-    contractName: () => {
-      if (this.state.contract !== "") {
-        return Contracts[this.state.contract].name;
-      }
-    },
-    method: "",
-    methodName: () => {
-      if (this.contract !== "") {
-        return Contracts[this.state.contract].abi[this.state.method].name;
-      }
-    },
-    inputs: [],
-    sizeInputs: method => {
-      let arr = [];
-      let index = 0;
-      while (arr.length < Contracts[this.state.contract].abi[method].inputs.length) {
-        arr[index] = "";
-        index++;
-      }
-      return arr;
-    },
-    setInputs: (event, _index) => {
-      event.persist();
 
-      this.setState(prevState => ({
-        inputs: [...prevState.inputs.map((input, index) => (
-            _index === index
-            ? event.target.value
-            : input))]
-      }));
-    },
-    msgValue: '',
-    setMsgValue: (event) => {
-      this.setState({ msgValue: event.target.value })
-    },
-    output: '',
-    outputs: [],
-    sizeOutputs: method => {
-      let arr = [];
-      let index = 0;
-      while (arr.length < Contracts[this.state.contract].abi[method].outputs.length) {
-        arr[index] = "";
-        index++;
-      }
-      return arr;
-    },
-    setOutputs: (contract, method, value) => {
-      let arr = [];
-      let index = 0;
+  // state = {
+  //   contract: "",
+  //   method: "",
+  //   inputs: [],
+  //   msgValue: '',
+  //   output: '',
+  //   outputs: [],
+  //   pickerState: true,
+  // };
 
-      if (typeof value === 'string') {
-        arr = [value];
-      } else {
-        arr = Object.keys(value).map((key) => value[key]);
-      }
-      // while (arr.length < Contracts[contract].abi[method].outputs.length) {
-      //   arr[index] = args[index];
-      //   index++;
-      // }
-      this.setState({outputs: arr})
-    },
-    outputTypes: (contract, method) => {
-      return Contracts[contract].abi[method].outputs.map((output, index) => {
-        return output.type;
-      })
-    },
-    selected: () => {
-      if (this.state.contract !== "") {
-        if (this.state.method !== "") {
-          return `${this.state.contractName()} / ${this.state.methodName()}`;
-        } else {
-          return `${this.state.contractName()}`;
-        }
-      }
-    },
-    pickerState: true,
-    currentAcc: web3.eth.defaultAccount,
-  };
+  contractName = (contract) => {
+    if (this.props.contract !== "") {
+      return Contracts[this.props.contract].name;
+    }
+  }
 
-  handleChange = event => {
-    this.setState({
-      [event.target.name]: event.target.value,
-      pickerState: false
+  methodName = (contract, method) => {
+    if (contract !== "") {
+      return Contracts[contract].abi[method].name;
+    }
+  }
+
+  sizeInputs = ( contract, method) => {
+    let arr = [];
+    let index = 0;
+    while (arr.length < Contracts[contract].abi[method].inputs.length) {
+      arr[index] = "";
+      index++;
+    }
+    return arr;
+  }
+
+  setInputs = (event, _index) => {
+    event.persist();
+    let { inputs } = this.props;
+
+    // this.setState(prevState => ({
+    //   inputs: [...prevState.inputs.map((input, index) => (
+    //       _index === index
+    //       ? event.target.value
+    //       : input))]
+    // }));
+    let newInputs = inputs.map((input, index) => (
+          _index === index
+          ? event.target.value
+          : input))
+    store.dispatch({
+      type: 'SET_INPUTS',
+      inputs: newInputs
     });
-  };
+  }
+
+
+  setMsgValue = (event) => {
+    // this.setState({ msgValue: event.target.value })
+    store.dispatch({
+      type: 'SET_MSG_VALUE',
+      msgValue: event.target.value
+    });
+  }
+
+
+  sizeOutputs = (contract, method) => {
+    let arr = [];
+    let index = 0;
+    while (arr.length < Contracts[contract].abi[method].outputs.length) {
+      arr[index] = "";
+      index++;
+    }
+    return arr;
+  }
+
+  setOutputs = (value) => {
+    let arr = [];
+    let index = 0;
+
+    if (typeof value === 'string') {
+      arr = [value];
+    } else {
+      arr = Object.keys(value).map((key) => value[key]);
+    }
+    // this.setState({outputs: arr})
+    store.dispatch({
+      type: 'SET_OUTPUTS',
+      outputs: arr
+    })
+  }
+
+  outputTypes = (contract, method) => {
+    return Contracts[contract].abi[method].outputs.map((output, index) => {
+      return output.type;
+    })
+  }
+
+  // selected = () => {
+  //   let { contract, method } =
+  //   if (this.state.contract !== "") {
+  //     if (this.state.method !== "") {
+  //       return `${this.state.contractName(contract)} / ${this.state.methodName(contract, method)}`;
+  //     } else {
+  //       return `${this.state.contractName(contract)}`;
+  //     }
+  //   }
+  // }
+
+  // handleChange = event => {
+  //   this.setState({
+  //     [event.target.name]: event.target.value,
+  //     pickerState: false
+  //   });
+  // };
 
   contractChange = event => {
-    this.setState({
-      [event.target.name]: event.target.value,
+    // this.setState({
+    //   [event.target.name]: event.target.value,
+    //   method: "",
+    //   inputs: [],
+    //   msgValue: '',
+    //   pickerState: false
+    // });
+    store.dispatch({
+      type: 'SET_CONTRACT',
+      contract: event.target.value,
       method: "",
       inputs: [],
       msgValue: '',
       pickerState: false
-    });
+    })
   };
 
   methodChange = event => {
-    this.setState({
-      [event.target.name]: event.target.value,
-      inputs: this.state.sizeInputs(event.target.value),
+    let { contract } = this.props;
+    // this.setState({
+    //   [event.target.name]: event.target.value,
+    //   inputs: this.sizeInputs(contract, event.target.value),
+    //   msgValue: '',
+    //   outputs: this.sizeOutputs(contract, event.target.value),
+    //   pickerState: false
+    // });
+    store.dispatch({
+      type: 'SET_METHOD',
+      method: event.target.value,
+      inputs: this.sizeInputs(contract, event.target.value),
       msgValue: '',
-      outputs: this.state.sizeOutputs(event.target.value),
+      outputs: this.sizeOutputs(contract, event.target.value),
       pickerState: false
-    });
+    })
   };
 
-  checkAcc(obj) {
-    if(!(this.state.currentAcc === obj.selectedAddress)) {
-      this.setState({currentAcc: obj.selectedAddress});
-    }
+  handleTxHash(err, txHash) {
+    let tx = txHash;
+    let error = err === null ? null : err.message.split(`Error:`)[err.message.split(`Error:`).length -1];
+    // this.setState({
+    //   snack: true,
+    //   tx: txState
+    // });
+    store.dispatch({
+      type: 'TX_SNACK',
+      snackOpen: true,
+      tx,
+      error
+    })
   }
 
-  componentDidMount() {
-    try {
-      if(web3.currentProvider !== null) {
-        EmbarkJS.onReady(() => {
-          if (EmbarkJS.isNewWeb3()) {
+  confirm(event) {
+    event.preventDefault()
+    let { contract, method, msgValue, inputs, currentAcc } = this.props;
+    let { methodName, setOutputs } = this;
+    let methodABI = Contracts[contract].abi[method];
 
-            web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+    let appliedInputs = inputs.map((input, index) => {
+      if (methodABI.inputs[index].type[methodABI.inputs[index].type.length-1] === "]") {
+        return input.replace(/\s/g,'').split(",");
+      }
+      return input;
+    })
 
-          } else {
-            if (EmbarkJS.Messages.providerName === 'whisper') {
-              console.log(Error(`current web3 api not supported`))
-            } else {
-              console.log(Error(`web3 provider not detected/mounted`))
-            }
-          }
-        });
+    let tx = Contracts[contract].abi[method].constant === true
+      ? 'call'
+      : 'send';
+
+    let txConfig = Contracts[contract].abi[method].payable
+      ? { from: currentAcc, value: web3.utils.toWei(msgValue, "ether") }
+      : { from: currentAcc }
+
+    if (tx === 'call') {
+      if (EmbarkJS.isNewWeb3()) {
+        Contracts[contract].contractObj.methods[methodName(contract, method)].apply(null, appliedInputs)[tx]()
+          .then((value) => setOutputs(value));
       } else {
-        console.log(Error(`web3 provider not detected/mounted`))
+        console.error('web3 api not supported');
       }
-    }
-    catch(err) {
-      console.log(err);
+    } else {
+      if (EmbarkJS.isNewWeb3()) {
+        Contracts[contract].contractObj.methods[methodName(contract, method)].apply(null, appliedInputs)[tx](txConfig)
+        .on("transactionHash", (hash) => this.handleTxHash(null, hash))
+        .on("error", (err) => this.handleTxHash(err, undefined));
+      } else {
+        console.error('web3 api not supported');
+      }
     }
   }
 
-
-  componentWillUnmount() {
-    try {
-      if (web3.currentProvider !== null){
-
-        web3.currentProvider.publicConfigStore.removeAllListeners();
-
-      }
-    }
-    catch(err) {
-      console.log(err);
-    }
-  }
 
   render() {
-    const {classes} = this.props;
-
-    // const txButton = (
-    //   <div className={classes.flex}>
-    //     <Button
-    //       variant="contained"
-    //       color="primary"
-    //       className={classes.button}
-    //       disabled={ !(this.state.method !== '' && this.state.inputs.find(value => value === "") === undefined) }
-    //     >
-    //       Confirm
-    //     </Button>
-    //   </div>
-    // )
+    const { classes, contract, method, pickerState } = this.props;
 
     return (
       <div className={classes.root}>
@@ -447,7 +475,7 @@ class ContractReader extends React.Component {
 
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="contract-helper">Contract</InputLabel>
-                <Select className={classes.selects} value={this.state.contract} onChange={this.contractChange} input={<Input name = "contract" id = "contract-helper" />}>
+                <Select className={classes.selects} value={contract} onChange={this.contractChange} input={<Input name="contract" id="contract-helper" />}>
                   {contractList}
                 </Select>
               </FormControl>
@@ -455,19 +483,19 @@ class ContractReader extends React.Component {
             <div className={classes.input}>
               <Typography variant="subheading" children="2. Pick a Method"/>
 
-              <FormControl className={classes.formControl} disabled={this.state.pickerState}>
+              <FormControl className={classes.formControl} disabled={pickerState}>
                 <InputLabel htmlFor="method-helper">Method</InputLabel>
-                <Select className={classes.selects} value={this.state.method} onChange={this.methodChange} input={<Input name = "method" id = "method-helper" />}>
-                  {methodList(this.state)}
+                <Select className={classes.selects} value={method} onChange={this.methodChange} input={<Input name="method" id="method-helper" />}>
+                  {methodList(this)}
                 </Select>
               </FormControl>
             </div>
           </div>
           <Divider className={classes.divider}/>
           <div className={classes.input}>
-            <Typography variant="subheading" children={selected(this.state)}/>
+            <Typography variant="subheading" children={selected(this)}/>
             <div className={classes.toolbar}/>
-            {methodCheck(this, classes)}
+            {methodCheck(this)}
             <div className={classes.toolbar}/>
           </div>
         </div>
@@ -475,8 +503,22 @@ class ContractReader extends React.Component {
   }
 }
 
+const mapStateToProps = function(store) {
+  let { contract, method, inputs, msgValue, output, outputs, pickerState } = store.contractReaderState;
+  return {
+    contract,
+    method,
+    inputs,
+    msgValue,
+    output,
+    outputs,
+    pickerState,
+    currentAcc: store.web3State.currentAcc
+  };
+}
+
 ContractReader.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(ContractReader);
+export default connect(mapStateToProps)(withStyles(styles)(ContractReader));
