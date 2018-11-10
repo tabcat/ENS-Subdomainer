@@ -13,6 +13,12 @@ import MenuIcon from "@material-ui/icons/Menu";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 
+import TxSnackbar from './txSnackbar';
+import Dialogger from './dialogger';
+
+import { connect } from 'react-redux';
+import store from '../store';
+
 import EmbarkJS from 'Embark/EmbarkJS';
 
 import Home from './home'
@@ -53,6 +59,9 @@ const styles = theme => ({
   content: {
     [theme.breakpoints.up("md")]: {
       width: `calc(100% - ${drawerWidth}px)`
+    },
+    [theme.breakpoints.down("md")]: {
+      width: `100%`
     }
   },
   list: {
@@ -81,9 +90,9 @@ const nav = [
   }
 ]
 
-const navList = (props, navArr) => {
+const navList = (comp, navArr) => {
 
-  let { selectedIndex } = props.state;
+  let { selectedDrawer } = comp.props;
 
   return navArr.map((navObj, index) => {
 
@@ -94,8 +103,8 @@ const navList = (props, navArr) => {
           button
           id={navObj.name}
           key={index}
-          selected={selectedIndex === index}
-          onClick={event => props.selectContent(index, event)}
+          selected={selectedDrawer === index}
+          onClick={event => comp.selectContent(index, event)}
 
           >
           <ListItemText primary={navObj.name} />
@@ -107,59 +116,86 @@ const navList = (props, navArr) => {
   })
 }
 
-const contentRender = (state) => {
-  return nav[state.selectedIndex].component();
+const contentRender = (comp) => {
+  if (comp.props.selectedDrawer !== undefined) {
+    let { selectedDrawer } = comp.props;
+    return nav[selectedDrawer].component();
+  }
 }
 
 
 
 class NavDrawer extends React.Component {
 
-      state = {
-        mobileOpen: false,
-        selectedIndex: 0
-      };
+      // state = {
+      //   mobileOpen: false,
+      //   selectedIndex: 0
+      // };
 
-      selectContent = (index) => {
-        this.setState(state => ({
-          selectedIndex: index,
-          mobileOpen: false
-         }))
+      selectContent = index => {
+        // this.setState(state => ({
+        //   selectedIndex: index,
+        //   mobileOpen: false
+        //  }))
+        store.dispatch({
+          type: 'SET_DRAWER',
+          selected: index
+        })
       }
 
       selectedName = () => {
-        return (
-          <Typography
-            variant="title"
-            color="inherit"
-            children={nav[this.state.selectedIndex].name}
-            noWrap
-          />
-        )
+        if (this.props.selectedDrawer !== undefined) {
+          return (
+            <Typography
+              variant="title"
+              color="inherit"
+              children={nav[this.props.selectedDrawer].name}
+              noWrap
+            />
+          )
+        }
       }
 
       handleDrawerToggle = () => {
-        this.setState(state => ({ mobileOpen: !state.mobileOpen }));
+        // this.setState(state => ({ mobileOpen: !state.mobileOpen }));
+        store.dispatch({
+          type: 'MOBILE_OPEN',
+          mobile: !this.props.mobileOpen
+        })
       };
 
       handleListItemClick = index => {
-        this.setState({
-          selectedIndex: index,
-          mobileOpen: false
-        });
+        // this.setState({
+        //   selectedIndex: index,
+        //   mobileOpen: false
+        // });
+        store.dispatch({
+          type: 'SET_DRAWER',
+          selected: index
+        })
       };
+
+      checkAcc(obj) {
+        let { currentAcc } = this.props;
+        if(!(currentAcc === obj.selectedAddress) && currentAcc !== undefined) {
+          // this.setState({currentAcc: obj.selectedAddress});
+          store.dispatch({
+            type: 'SET_ADDR',
+            addr: obj.selectedAddress
+          })
+        }
+      }
 
       componentDidMount() {
         try {
+          let init = 'INIT_FAIL';
+          let addr = 'web3 not connected';
           EmbarkJS.onReady(() => {
             if (EmbarkJS.isNewWeb3()) {
-              EmbarkJS.Messages.Providers.whisper.getWhisperVersion((err, version) => {
-                if (!err) {
                   console.log(`web3 provider mounted successfully`)
-                } else {
-                  console.log(err);
-                }
-              });
+                  init = 'INIT_SUCCESS';
+                  addr = web3.utils.toHex(web3.eth.defaultAccount);
+                  web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
             } else {
               if (EmbarkJS.Messages.providerName === 'whisper') {
                 console.log(Error(`current web3 api not supported`))
@@ -168,18 +204,24 @@ class NavDrawer extends React.Component {
               }
             }
 
-            this.setState({
-              selectedIndex: 0,
-              storageEnabled: true
+            // this.setState({
+            //   selectedIndex: 0,
+            //   storageEnabled: true
+            // })
+            web3.eth.net.getNetworkType((err, type) => {
+              store.dispatch({
+                type: init,
+                currentAcc: addr,
+                networkType: type
+              });
             });
           });
         }
         catch(err) {
           console.log(err);
-          this.setState({
-            selectedIndex: 0,
-            storageEnabled: false
-          });
+          store.dispatch({
+            type: 'INIT_FAIL'
+          })
         }
       }
 
@@ -228,7 +270,7 @@ class NavDrawer extends React.Component {
             <Drawer
               variant="temporary"
               anchor={theme.direction === "rtl" ? "right" : "left"}
-              open={this.state.mobileOpen}
+              open={this.props.mobileOpen}
               onClose={this.handleDrawerToggle}
               classes={{
                 paper: classes.drawerPaper
@@ -253,12 +295,24 @@ class NavDrawer extends React.Component {
           </Hidden>
           <main className={classes.content}>
             <div className={classes.toolbar} />
-            {contentRender(this.state)}
+            {contentRender(this)}
           </main>
+          <div>
+            <Dialogger/>
+            <TxSnackbar/>
+          </div>
         </div>
 
     );
   }
+}
+
+const mapStateToProps = function(store) {
+  return {
+    mobileOpen: store.navState.mobileOpen,
+    selectedDrawer: store.navState.selectedDrawer,
+    currentAcc: store.web3State.currentAcc
+  };
 }
 
 NavDrawer.propTypes = {
@@ -266,4 +320,4 @@ NavDrawer.propTypes = {
   theme: PropTypes.object.isRequired
 };
 
-export default withStyles(styles, { withTheme: true })(NavDrawer);
+export default connect(mapStateToProps)(withStyles(styles, { withTheme: true })(NavDrawer));
