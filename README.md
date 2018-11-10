@@ -17,7 +17,7 @@ what works?:
 
   # live ropsten!
   
-  Subdomain seller has been configured
+  Subdomain seller has not been configured yet
   
   https://ipfs.io/ipfs/QmSrRgW8pCY37hj22fwFGyiGtgy4dDvHsiD767ZmrXnZwg/index.html
   
