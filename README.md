@@ -23,7 +23,9 @@ what works?:
   
   # build with NPM:
   
-  $ npm -g install embark
+  !!! uses embark 4.0.0-alpha.1 !!!
+  
+  $ npm -g install embark@next
   
   in root dir of cloned repo:
   
