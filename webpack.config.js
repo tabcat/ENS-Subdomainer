@@ -1,27 +1,37 @@
-// some packages, plugins, and presets referenced/required in this webpack
-// config are deps of embark and will be transitive dapp deps unless specified
-// in the dapp's own package.json
+/* global __dirname module process require */
 
-// embark modifies process.env.NODE_PATH so that when running dapp scripts in
-// embark's child processes, embark's own node_modules directory will be
-// searched by node's require(); however, webpack and babel do not directly
-// support NODE_PATH, so modules such as babel plugins and presets must be
-// resolved with require.resolve(); that is only necessary if a plugin/preset
-// is in embark's node_modules vs. the dapp's node_modules
-
-const cloneDeep = require('lodash.clonedeep');
-// const CompressionPlugin = require('compression-webpack-plugin');
-const glob = require('glob');
-const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 const path = require('path');
 
 const dappPath = process.env.DAPP_PATH;
 const embarkPath = process.env.EMBARK_PATH;
 
+const dappNodeModules = path.join(dappPath, 'node_modules');
+const embarkNodeModules = path.join(embarkPath, 'node_modules');
+
+function customRequire(mod) {
+  return require(customRequire.resolve(mod));
+}
+
+customRequire.resolve = function (mod) {
+  return require.resolve(
+    mod,
+    {paths: [dappNodeModules, embarkNodeModules]}
+  );
+};
+
+// some packages, plugins, and presets referenced/required in this webpack
+// config are deps of embark and will effectively be transitive dapp deps
+// unless specified in the dapp's own package.json
+
+const cloneDeep = customRequire('lodash.clonedeep');
+// const CompressionPlugin = customRequire('compression-webpack-plugin');
+const glob = customRequire('glob');
+const HardSourceWebpackPlugin = customRequire('hard-source-webpack-plugin');
+
 const embarkAliases = require(path.join(dappPath, '.embark/embark-aliases.json'));
 const embarkAssets = require(path.join(dappPath, '.embark/embark-assets.json'));
-const embarkNodeModules = path.join(embarkPath, 'node_modules');
 const embarkJson = require(path.join(dappPath, 'embark.json'));
+const embarkPipeline = require(path.join(dappPath, '.embark/embark-pipeline.json'));
 
 const buildDir = path.join(dappPath, embarkJson.buildDir);
 
@@ -56,14 +66,21 @@ const entry = Object.keys(embarkAssets)
 function resolve(pkgName) {
   if (Array.isArray(pkgName)) {
     const _pkgName = pkgName[0];
-    pkgName[0] = require.resolve(_pkgName);
+    pkgName[0] = customRequire.resolve(_pkgName);
     return pkgName;
   }
-  return require.resolve(pkgName);
+  return customRequire.resolve(pkgName);
 }
 
 // base config
 // -----------------------------------------------------------------------------
+
+// order and options of babel plugins and presets adapted from babel-preset-react-app:
+// see: https://github.com/facebook/create-react-app/tree/v2.0.4/packages/babel-preset-react-app
+// + babel plugins run before babel presets.
+// + babel plugin ordering is first to last.
+// + babel preset ordering is reversed (last to first).
+// see: https://babeljs.io/docs/en/plugins#plugin-ordering
 
 const base = {
   context: dappPath,
@@ -71,12 +88,19 @@ const base = {
   module: {
     rules: [
       {
-        test: /\.css$/,
-        use: [{loader: 'style-loader'}, {loader: 'css-loader'}]
+        test: /\.scss$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader'
+        ]
       },
       {
-        test: /\.scss$/,
-        use: [{loader: 'style-loader'}, {loader: 'css-loader'}]
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader'
+        ]
       },
       {
         test: /\.(png|woff|woff2|eot|ttf|svg)$/,
@@ -87,10 +111,25 @@ const base = {
         loader: 'babel-loader',
         exclude: /(node_modules|bower_components|\.embark[\\/]versions)/,
         options: {
+          cacheDirectory: true,
+          cacheCompression: false,
+          customize: path.join(__dirname, 'babel-loader-overrides.js'),
           plugins: [
             [
               'babel-plugin-module-resolver', {
-                'alias': embarkAliases
+                alias: embarkAliases
+              }
+            ],
+            'babel-plugin-macros',
+            '@babel/plugin-transform-destructuring',
+            [
+              '@babel/plugin-proposal-class-properties', {
+                loose: true
+              }
+            ],
+            [
+              '@babel/plugin-proposal-object-rest-spread', {
+                useBuiltIns: true
               }
             ],
             [
@@ -99,20 +138,23 @@ const base = {
                 useESModules: true
               }
             ],
-						[
-							'@babel/plugin-proposal-class-properties'
-						]
+            '@babel/plugin-syntax-dynamic-import'
           ].map(resolve),
           presets: [
             [
               '@babel/preset-env', {
+                exclude: ['transform-typeof-symbol'],
                 modules: false,
                 targets: {
                   browsers: ['last 1 version', 'not dead', '> 0.2%']
                 }
               }
             ],
-            '@babel/preset-react'
+            [
+              '@babel/preset-react', {
+                useBuiltIns: true
+              }
+            ]
           ].map(resolve)
         }
       }
@@ -122,7 +164,8 @@ const base = {
     filename: (chunkData) => chunkData.chunk.name,
     // globalObject workaround for node-compatible UMD builds with webpack 4
     // see: https://github.com/webpack/webpack/issues/6522#issuecomment-371120689
-    globalObject: 'typeof self !== \'undefined\' ? self : this',
+    // see: https://github.com/webpack/webpack/issues/6522#issuecomment-418864518
+    globalObject: '(typeof self !== \'undefined\' ? self : this)',
     libraryTarget: 'umd',
     path: buildDir
   },
@@ -135,6 +178,13 @@ const base = {
   profile: true, stats: 'verbose',
   resolve: {
     alias: embarkAliases,
+    extensions: [
+      // webpack defaults
+      // see: https://webpack.js.org/configuration/resolve/#resolve-extensions
+      '.wasm', '.mjs', '.js', '.json',
+      // additional extensions
+      '.jsx'
+    ],
     modules: [
       ...versions,
       'node_modules',
@@ -149,6 +199,40 @@ const base = {
   }
 };
 
+const baseBabelLoader = base.module.rules[3];
+
+// Flow
+// -----------------------------------------------------------------------------
+
+// should be false in configs that have isTypeScriptEnabled = true
+const isFlowEnabled = !embarkPipeline.typescript;
+if (isFlowEnabled) {
+  // position @babel/plugin-transform-flow-strip-types per babel-preset-react-app
+  baseBabelLoader.options.plugins.unshift(
+    customRequire.resolve('@babel/plugin-transform-flow-strip-types')
+  );
+}
+
+// TypeScript
+// -----------------------------------------------------------------------------
+
+// should be false in configs that have isFlowEnabled = true
+const isTypeScriptEnabled = !!embarkPipeline.typescript;
+if (isTypeScriptEnabled) {
+  // position @babel/preset-typescript as the last preset (runs first)
+  // see: https://blogs.msdn.microsoft.com/typescript/2018/08/27/typescript-and-babel-7/
+  baseBabelLoader.options.presets.push(
+    customRequire.resolve('@babel/preset-typescript')
+  );
+  // additional extensions
+  baseBabelLoader.test = /\.(js|ts)x?$/;
+  base.resolve.extensions.push('.ts', '.tsx');
+}
+
+if (isFlowEnabled && isTypeScriptEnabled) {
+  throw new Error('isFlowEnabled and isTypeScriptEnabled cannot both be true');
+}
+
 // development config
 // -----------------------------------------------------------------------------
 
@@ -161,6 +245,10 @@ development.mode = 'development';
 development.name = 'development';
 const devBabelLoader = development.module.rules[3];
 devBabelLoader.options.compact = false;
+// enable 'development' option for @babel/preset-react
+const devPresetReact = devBabelLoader.options.presets[1];
+const devPresetReactOptions = devPresetReact[1];
+devPresetReactOptions.development = true;
 
 // production config
 // -----------------------------------------------------------------------------
@@ -168,6 +256,14 @@ devBabelLoader.options.compact = false;
 const production = cloneDeep(base);
 production.mode = 'production';
 production.name = 'production';
+const prodBabelLoader = production.module.rules[3];
+// position babel-plugin-transform-react-remove-prop-types per babel-preset-react-app
+prodBabelLoader.options.plugins.splice(prodBabelLoader.length - 1, 0, [
+  customRequire.resolve('babel-plugin-transform-react-remove-prop-types'),
+  {
+    removeImport: true
+  }
+]);
 // compression of webpack's JS output not enabled by default
 // production.plugins.push(new CompressionPlugin());
 
