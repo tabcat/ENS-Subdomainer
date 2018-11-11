@@ -1,0 +1,34 @@
+{
+  "0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d": {
+    "contracts": {
+      "0xd1dceecb5746a0cd27089eb417c9b02acba9dc4c7dbba52eb5006363293042f5": {
+        "name": "Deed",
+        "address": "0x405e7662B48Fb70c18e9da52C6903732ffBbaD1f"
+      },
+      "0xd7dd9123a39117b3b1f7465336a05788387f007037f2e1b07f3ca001b3f55457": {
+        "name": "ENSRegistry",
+        "address": "0x112234455C3a32FD11230C42E7Bccd4A84e02010"
+      },
+      "0x6a6c39084ea02781104c6257ece1bc647c06cd370b090ad39354d5e28f41295a": {
+        "name": "SubdomainResolver",
+        "address": "0x798aDBF7b6E584FFA70c5abdeE779d767e7C5D9A"
+      },
+      "0x1aa540411033278e256c2eb02cf529c0f84143b8456fd15181d5603ed16c1985": {
+        "name": "HashRegistrar",
+        "address": "0xc19fD9004B5c9789391679de6d766b981DB94610"
+      },
+      "0xae60bba9242e2a07bd183b5e6227573d5c24347e6c3c3619c55d1fcebb117911": {
+        "name": "PublicResolver",
+        "address": "0x4c641fb9bad9b60ef180c31f56051ce826d21a9a"
+      },
+      "0x53e75e32af059a16a99044a00d679ebd6a083dce62e536e0afb134ae6f8235e5": {
+        "name": "FIFSRegistrar",
+        "address": "0x21397c1A1F4aCD9132fE36Df011610564b87E24b"
+      },
+      "0xf572a74d0de9bfa3be1a40d6297b6ee6be946dc56f7f911bd7c42ad5a02edfe3": {
+        "name": "SubdomainRegistrar",
+        "address": "0xAFC237bC3B69f9FcA786FE1a76c491495bA24f9D"
+      }
+    }
+  }
+}
