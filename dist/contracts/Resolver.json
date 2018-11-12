@@ -1,0 +1,78 @@
+{
+  "className": "Resolver",
+  "args": [],
+  "code": "",
+  "runtimeBytecode": "",
+  "realRuntimeBytecode": "",
+  "swarmHash": "",
+  "gasEstimates": null,
+  "functionHashes": {
+    "addr(bytes32)": "3b3b57de",
+    "setAddr(bytes32,address)": "d5fa2b00",
+    "supportsInterface(bytes4)": "01ffc9a7"
+  },
+  "abiDefinition": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "interfaceID",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "node",
+          "type": "bytes32"
+        }
+      ],
+      "name": "addr",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "node",
+          "type": "bytes32"
+        },
+        {
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setAddr",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "filename": "Resolver.sol",
+  "gas": "auto",
+  "type": "file",
+  "deploy": false,
+  "_gasLimit": false,
+  "error": false
+}

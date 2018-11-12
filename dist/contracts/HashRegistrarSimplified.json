@@ -1,0 +1,89 @@
+{
+  "className": "HashRegistrarSimplified",
+  "args": [],
+  "code": "",
+  "runtimeBytecode": "",
+  "realRuntimeBytecode": "",
+  "swarmHash": "",
+  "gasEstimates": null,
+  "functionHashes": {
+    "entries(bytes32)": "267b6922",
+    "rootNode()": "faff50a8",
+    "transfer(bytes32,address)": "79ce9fac"
+  },
+  "abiDefinition": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_hash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "entries",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "name": "",
+          "type": "address"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_hash",
+          "type": "bytes32"
+        },
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "rootNode",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "filename": "HashRegistrarSimplified.sol",
+  "gas": "auto",
+  "type": "file",
+  "deploy": false,
+  "_gasLimit": false,
+  "error": false
+}

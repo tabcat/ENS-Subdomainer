@@ -1,0 +1,63 @@
+{
+  "className": "Deed",
+  "args": [],
+  "code": "608060405234801561001057600080fd5b5060fe8061001f6000396000f30060806040526004361060485763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663674f220f8114604d5780638da5cb5b146088575b600080fd5b348015605857600080fd5b50605f609a565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b348015609357600080fd5b50605f60b6565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820847cc8c481885bf536bdd43c99822312f9562da08612b8e837836f9b8273e1930029",
+  "runtimeBytecode": "60806040526004361060485763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663674f220f8114604d5780638da5cb5b146088575b600080fd5b348015605857600080fd5b50605f609a565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b348015609357600080fd5b50605f60b6565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820847cc8c481885bf536bdd43c99822312f9562da08612b8e837836f9b8273e1930029",
+  "realRuntimeBytecode": "60806040526004361060485763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663674f220f8114604d5780638da5cb5b146088575b600080fd5b348015605857600080fd5b50605f609a565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b348015609357600080fd5b50605f60b6565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820",
+  "swarmHash": "847cc8c481885bf536bdd43c99822312f9562da08612b8e837836f9b8273e193",
+  "gasEstimates": {
+    "creation": {
+      "codeDepositCost": "50800",
+      "executionCost": "99",
+      "totalCost": "50899"
+    },
+    "external": {
+      "owner()": "421",
+      "previousOwner()": "399"
+    }
+  },
+  "functionHashes": {
+    "owner()": "8da5cb5b",
+    "previousOwner()": "674f220f"
+  },
+  "abiDefinition": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "previousOwner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "filename": "HashRegistrarSimplified.sol",
+  "gas": "auto",
+  "type": "file",
+  "deploy": true,
+  "_gasLimit": false,
+  "error": false,
+  "deploymentAccount": "0xc79cd4140CE5dCef4cf7592eDabf2859B815A2Fb",
+  "realArgs": [],
+  "address": "0x405e7662B48Fb70c18e9da52C6903732ffBbaD1f",
+  "deployedAddress": "0x405e7662B48Fb70c18e9da52C6903732ffBbaD1f"
+}
