@@ -64,6 +64,28 @@ const subnameActions = (comp) =>
   </DialogActions>
 );
 
+const enableEthActions = (comp) =>
+(
+  <DialogActions>
+    <Button onClick={event => comp.handleDialog(event, false)} color="primary">
+      Cancel
+    </Button>
+    <Button onClick={event => comp.enableEth(event)} color="primary" autoFocus>
+      Authorize
+    </Button>
+  </DialogActions>
+);
+
+const enableEthContent =
+(
+  <DialogContent>
+    <DialogContentText>
+      if you dont, this site will not be able to interact with ethereum :(
+    </DialogContentText>
+  </DialogContent>
+)
+
+
 const optionsCheck = (comp) => {
   let { fullScreen, dialogOpen, dialogAction, bid, subnameSearch, rootDomain } = comp.props;
   let options;
@@ -80,6 +102,13 @@ const optionsCheck = (comp) => {
         title: `Are you sure you want to register ${subnameSearch}.${rootDomain}.eth for 0.002eth ?`,
         content: "",
         actions: subnameActions(comp)
+      };
+      break;
+    case 'ENABLE_ETH':
+      options = {
+        title: `Please authorize your web3 provider to inject web3.`,
+        content: enableEthContent,
+        actions: enableEthActions(comp)
       };
       break;
     default:
@@ -174,6 +203,17 @@ class Dialogger extends React.Component {
       tx,
       error
     })
+  }
+
+  enableEth(event) {
+    event.preventDefault();
+    ethereum.enable()
+    .then(() => {
+      store.dispatch({
+        type: 'WEB3_ENABLED'
+      })
+    })
+    .catch();
   }
 
   render() {
