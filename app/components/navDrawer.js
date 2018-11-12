@@ -188,39 +188,43 @@ class NavDrawer extends React.Component {
 
       componentDidMount() {
         try {
-          let init = 'INIT_FAIL';
+          let init = 'WEB3_FAIL';
           let addr = 'web3 not connected';
           EmbarkJS.onReady(() => {
             if (EmbarkJS.isNewWeb3()) {
-                  console.log(`web3 provider mounted successfully`)
-                  init = 'INIT_SUCCESS';
+                  init = 'WEB3_SUCCESS';
                   addr = web3.utils.toHex(web3.eth.defaultAccount);
                   web3.currentProvider.publicConfigStore.on('update', obj => this.checkAcc(obj));
+                  if (addr !== null && typeof ethereum.enable === 'function') {
+                    ethereum.enable()
+                  }
             } else {
               if (EmbarkJS.Messages.providerName === 'whisper') {
-                console.log(Error(`current web3 api not supported`))
+                return console.log(Error(`current web3 api not supported`))
               } else {
-                console.log(Error(`web3 provider not detected/mounted`))
+                return console.log(Error(`web3 provider not detected/mounted`))
               }
             }
 
-            // this.setState({
-            //   selectedIndex: 0,
-            //   storageEnabled: true
-            // })
+            let msg = `web3 provider mounted successfully`;
+            if (addr === null) {
+              init = 'WEB3_DISABLED';
+              msg = `please enable web3 access`
+            }            
             web3.eth.net.getNetworkType((err, type) => {
               store.dispatch({
                 type: init,
                 currentAcc: addr,
                 networkType: type
               });
+              return console.log(msg);
             });
           });
         }
         catch(err) {
           console.log(err);
           store.dispatch({
-            type: 'INIT_FAIL'
+            type: 'WEB3_FAIL'
           })
         }
       }
