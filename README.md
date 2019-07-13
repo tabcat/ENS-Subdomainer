@@ -1,3 +1,4 @@
+### This repo is deprecated
 # ENS-Subdomainer
 client side ui for buying ENS subdomains from a registrar
 
