@@ -12,15 +12,8 @@ what works?:
 
   Contract Reader works pretty well its under 'Advanced Utilities' tab
   
-  ENS Auction should work well now
+  ENS Subdomains tab needs to be configured manually when build and ran locally
   
-  ENS Subdomains tab needs to be configured manually when build and ran locally and not configured yet on Ropsten(waiting for ENS auction to complete :(
-
-  # live ropsten!
-  
-  Subdomain seller has not been configured yet
-  
-  https://ipfs.io/ipfs/QmSrRgW8pCY37hj22fwFGyiGtgy4dDvHsiD767ZmrXnZwg/index.html
   
   # build with NPM:
   
